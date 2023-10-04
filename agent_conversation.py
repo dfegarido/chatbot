@@ -6,7 +6,10 @@ from langchain.agents.output_parsers import ReActSingleInputOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain import hub
 from langchain.agents import AgentExecutor
-from llms import HuggingFaceHubLLMS
+
+import sys
+sys.path.append('./')
+from llms.hugging_facehub import HuggingFaceHubLLMS
 
 # Initialize the LLM model
 hugging = HuggingFaceHubLLMS()

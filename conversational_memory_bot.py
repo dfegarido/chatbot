@@ -8,7 +8,7 @@ from langchain.prompts import (
     HumanMessagePromptTemplate,
 )
 from langchain.memory import ConversationBufferMemory, ConversationBufferWindowMemory, ConversationSummaryMemory
-from llms import HuggingFaceHubLLMS
+from llms.hugging_facehub import HuggingFaceHubLLMS
 
 hug_llms = HuggingFaceHubLLMS()
 
