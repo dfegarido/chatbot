@@ -1,7 +1,7 @@
 import os
 from langchain.llms import HuggingFaceHub
 
-class HuggingFaceHubLLMS():
+class HuggingFaceHubLLMS:
 
     def __init__(self, repo_id='flan', temp=0.5, max_length=64) -> None:
         self.repo_id = self.repo_lists[repo_id]
@@ -10,13 +10,13 @@ class HuggingFaceHubLLMS():
         
     @property
     def llm(self):
-        print(f'REPO : {self.repo_id}')
         return HuggingFaceHub(repo_id=self.repo_id, model_kwargs={"temperature":self.temp, "max_length": self.max_length})
 
     @property
     def repo_lists(self) -> dict:
         repo_id =  {
                 'flan': 'google/flan-t5-xxl',
+                'flan-large': 'google/flan-t5-large',
                 'dolly': 'databricks/dolly-v2-3b',
                 'camel': 'Writer/camel-5b-hf',
                 'xgen': 'Salesforce/xgen-7b-8k-base',

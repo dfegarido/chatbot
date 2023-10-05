@@ -1,0 +1,100 @@
+Apple: $2.50
+Banana: $1.20
+Orange: $1.80
+Strawberry: $3.00
+Blueberries: $4.50
+Spinach: $2.00
+Broccoli: $2.30
+Carrots: $1.50
+Cucumber: $1.00
+Tomato: $1.20
+Potato: $0.80
+Onion: $0.75
+Garlic: $0.50
+Chicken Breast (per lb): $3.99
+Salmon (per lb): $7.50
+Ground Beef (per lb): $4.00
+Eggs (dozen): $2.00
+Milk (per gallon): $3.50
+Bread: $2.20
+Rice (per lb): $1.50
+Pasta: $1.00
+Peanut Butter: $3.00
+Jam: $2.00
+Honey: $4.00
+Olive Oil: $5.00
+Avocado: $1.75
+Cheese (per lb): $4.50
+Yogurt: $2.50
+Ice Cream: $3.50
+Chocolate: $1.50
+Coffee (per lb): $7.00
+Tea (per box): $2.80
+Wine: $10.00
+Beer (6-pack): $8.00
+Juice: $2.00
+Honeydew Melon: $3.00
+Watermelon: $4.00
+Pineapple: $2.50
+Mango: $2.75
+Bread Rolls (pack): $2.00
+Hamburger Buns (pack): $2.20
+Hot Dog Buns (pack): $1.80
+Lettuce: $1.00
+Bell Pepper: $1.50
+Green Beans: $2.00
+Asparagus: $3.00
+Pizza (frozen): $4.50
+Ice Cream Cone: $1.00
+Chocolate Chip Cookies (pack): $2.50
+Cake Mix: $2.00
+Flour (per lb): $1.25
+Sugar (per lb): $1.00
+Salt: $0.50
+Pepper: $0.75
+Cereal: $3.00
+Pancake Mix: $2.00
+Maple Syrup: $3.50
+Ground Coffee: $4.00
+Sausages: $5.00
+Bacon (per lb): $5.50
+Ham (per lb): $4.00
+Turkey Breast (per lb): $6.00
+Ground Turkey (per lb): $4.50
+Shrimp (per lb): $8.00
+Pasta Sauce: $2.50
+Salsa: $1.80
+Hummus: $3.00
+Tuna: $1.50
+Canned Beans: $1.00
+Peanut Snacks: $2.20
+Popcorn: $1.00
+Granola Bars (pack): $3.00
+Nuts (per lb): $6.00
+Almond Milk: $3.50
+Cheese Puffs: $2.00
+Chips: $2.00
+Breadsticks: $1.50
+Nutella: $3.50
+Avocado Oil: $6.00
+Dark Chocolate: $3.00
+Bagels (pack): $2.50
+Cream Cheese: $1.50
+Peaches: $1.80
+Plums: $1.50
+Cherries: $3.50
+Grapes: $2.00
+Kiwi: $1.50
+Papaya: $2.80
+Corn (per ear): $0.75
+Pomegranate: $2.50
+Sushi: $10.00
+Hummus: $3.00
+Eggplant: $1.50
+Coconut: $2.00
+Rice Cake: $1.00
+Tortillas (pack): $2.00
+Tofu: $2.00
+Almonds (per lb): $7.00
+Coconut Water: $2.50
+Mixed Berries: $4.50
