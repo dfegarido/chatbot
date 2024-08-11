@@ -4,23 +4,22 @@ Chatbot open source
 Ref: https://www.youtube.com/watch?v=5CJA1Hbutqc&list=PLZoTAELRMXVOQPRG7VAuHL--y97opD5GQ&index=3
 """
 
-from langchain_community.llms import Ollama
+from langchain_community.llms.ollama import Ollama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 import streamlit as st
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-template = """
+TEMPLATE = """
 System: You are a helpful assistant. Please response to the user queries on Filipino language
 User: Question: {question}
 """
 
-prompt = ChatPromptTemplate.from_template(template=template)
+prompt = ChatPromptTemplate.from_template(template=TEMPLATE)
 
 
 
