@@ -1,34 +1,14 @@
-"""
-Hugging Face with Langchain integration
-Chatbot open source
-Ref: https://www.youtube.com/watch?v=5CJA1Hbutqc&list=PLZoTAELRMXVOQPRG7VAuHL--y97opD5GQ&index=3
-"""
+from transformers import AutoModelForQuestionAnswering, AutoTokenizer, pipeline
 
-from langchain_community.llms.ollama import Ollama
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+model_name = "deepset/roberta-base-squad2"
 
-import streamlit as st
-from dotenv import load_dotenv
-
-load_dotenv()
+# a) Get predictions
+nlp = pipeline('question-answering', model=model_name, tokenizer=model_name)
+QA_input = {
+    'question': 'where he graduated',
+    'context': 'I, Darwin Fegarido, has worked as a full-stack developer since 2016, his birthday is april 14 1991, a period during which I have worked in different environments, from start-ups to international companies. I am a self-motivated and self-taught professional who likes to solve problems. I merge a passion for usability and user experience with technical knowledge to create cool digital experiences. My repertoire includes programming languages and tools such as ReactJS, Vue, NodeJS, Python, MySQL, PostgreSQL, Nginx, MongoDB, Redis, and Elasticsearch. I also deploy applications using cloud computing like AWS EC2, ECS, S3, Azure, Heroku, and Github, and configure CICD on Gitlab and Github.'
+}
+res = nlp(QA_input)
+print(res)
 
 
-TEMPLATE = """
-System: You are a helpful assistant. Please response to the user queries on Filipino language
-User: Question: {question}
-"""
-
-prompt = ChatPromptTemplate.from_template(template=TEMPLATE)
-
-
-
-st.title("Langchain Demo API")
-input_text = st.text_input("Enter your question")
-
-llm = Ollama(model='llama3.1')
-output_parser = StrOutputParser()
-chain = prompt|llm|output_parser
-
-if input_text:
-    st.write(chain.invoke({"question": {input_text}}))
