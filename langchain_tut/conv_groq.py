@@ -68,25 +68,17 @@ def link_tool(url: str) -> str:
 def news_tool(query: str) -> str:
     """
     News Search Tool
+    👋 Hey there! Want to stay updated on the latest news? With this tool, you can easily search for articles on any topic!
 
-    Get the latest news articles on any topic with this tool!
-    Description: This tool allows you to search for news articles on any topic by querying Google News. Simply provide a search query, and this tool will fetch the latest news articles from Google News and return them to you.
-    Input: A search query (e.g. "latest tech news", "coronavirus updates", etc.)
-    Output: A list of news articles related to your search query, including:
+    How It Works: Just give me a search query, like “latest tech news” or “coronavirus updates,” and I'll fetch the most recent articles from Google News for you.
 
-    Article title
-    Article summary
-    Article URL
-    Source publication
-    Example Output:
+    What You'll Get: I'll provide you with a list of articles that includes:
 
-    "Latest Tech News
-
-    Article 1: "Apple Unveils New iPhone 13" (Source: CNN)
-    Summary: Apple has announced the latest iPhone 13, featuring a new camera system and improved battery life.
-    URL: https://www.cnn.com/2022/09/14/tech/apple-iphone-13/index.html
-
-    Note: The output format may vary depending on the structure of the Google News results.
+    Article Title: What's the headline?
+    Summary: A quick overview of the article.
+    URL: A link to read more.
+    Source: Where the article is published.
+    Example: For instance, if you search for “latest tech news,” I might tell you: "In the latest tech news, Apple has just unveiled the new iPhone 13! According to CNN, it comes with an upgraded camera system and better battery life. If you want to check it out, you can read more here. Exciting stuff!"
     """
     encoded_string = urllib.parse.quote(query)
     loader_multiple_pages = WebBaseLoader([f"https://news.google.com/search?q={encoded_string}&hl=en-PH&gl=PH&ceid=PH%3Aen"])
@@ -125,7 +117,7 @@ def weather() -> str:
 
     Input: None required! This tool will automatically detect your location and provide the current weather forecast.
 
-    Output: A detailed weather forecast, including:
+    Output: A summary weather forecast with details facts
 
     Current temperature and conditions
     High and low temperatures for the day
@@ -134,15 +126,9 @@ def weather() -> str:
     Weather forecast for the next few days
     Example Output:
 
-    "Current Weather:
-    Temperature: 75°F (24°C)
-    Conditions: Partly Cloudy
-    Humidity: 60%
-    Wind Speed: 10 mph
+    "The current weather is pretty nice, with a temperature of 75°F (24°C) and partly cloudy skies. Humidity is around 60%, and there’s a light breeze at 10 mph.
 
-    Forecast:
-    Today: High of 80°F (27°C), Low of 65°F (18°C)
-    Tomorrow: High of 85°F (29°C), Low of 70°F (21°C)"
+    Looking ahead, today’s high will reach 80°F (27°C), while the low will be around 65°F (18°C). Tomorrow looks even warmer, with a high of 85°F (29°C) and a low of 70°F (21°C). Enjoy the weather!"
 
     Usage: Simply call the weather_tool function to get the latest weather forecast for your location. No input required!
     """

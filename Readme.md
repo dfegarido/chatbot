@@ -39,6 +39,20 @@ Update the `sample.env` file to `.env` and configure the environment variables a
 * **Language Learning:** Use the chatbot as a language learning tool to practice conversational skills.
 * **Entertainment:** Engage in fun conversations with the chatbot and explore its capabilities.
 
+## TODO
+---------------
+- [x] Setting up Chatbot
+- [ ] Memory on Database
+- [ ] Setting up tools
+    - [ ] Weather
+    - [ ] LinkedIn
+    - [ ] Search Engine (Google/DuckDuck/Etc)
+    - [ ] News
+    - [ ] DateTime
+- [ ] Web UI
+- [ ] Setting up Conscious
+- [ ] IOT
+
 ## Contributing
 ---------------
 
