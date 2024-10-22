@@ -1,21 +1,25 @@
+from langchain_core.documents import Document
+from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from pinecone import Pinecone, ServerlessSpec
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+import requests
 import os
 import time
 import uuid
 
 class PineconeClient:
-    def __init__(self, index_name="quickstart", dimension=1024, metric="cosine"):
+    def __init__(self, index_name="quickstart", dimension=768, metric="cosine"):  # Adjusted dimension for OpenAI
         self.api_key = os.getenv("PINECONE_API_KEY")
         self.pc = Pinecone(api_key=self.api_key)
         self.index_name = index_name
         self.dimension = dimension
         self.metric = metric
-        
+        self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
         self._create_index()
 
     def _create_index(self):
         """Create a Pinecone index if it doesn't already exist."""
-        existing_indexes = [index_name.name for index_name in self.pc.list_indexes()]
+        existing_indexes = [index.name for index in self.pc.list_indexes()]
 
         if self.index_name not in existing_indexes:
             self.pc.create_index(
@@ -33,52 +37,63 @@ class PineconeClient:
 
         self.index = self.pc.Index(self.index_name)
 
-    def add_data(self, data, model="multilingual-e5-large"):
+    def get_groq_embedding(self, text):
+        """Get the Groq embedding for a given text."""
+        url = "YOUR_GROQ_EMBEDDING_API_ENDPOINT"  # Replace with your Groq API endpoint
+        headers = {
+            "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}",
+            "Content-Type": "application/json"
+        }
+        data = {"text": text}
+        response = requests.post(url, headers=headers, json=data)
+
+        if response.status_code == 200:
+            return response.json().get("embedding")  # Adjust according to the actual response structure
+        else:
+            raise Exception(f"Error fetching embedding: {response.text}")
+
+
+    def vector_store(self, docs):
+        return PineconeVectorStore.from_documents(docs, self.embeddings, index_name=self.index_name)
+
+    def add_data(self, data):
         """Embed the input data and upsert it to the index."""
-        data = [{"id": str(uuid.uuid4()), "text": str(data)}]
-        embeddings = self.pc.inference.embed(
-            model=model,
-            inputs=[d['text'] for d in data],
-            parameters={"input_type": "passage", "truncate": "END"}
-        )
+        try:
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=200,
+                chunk_overlap=20
+            )
 
-        vectors = []
-        for d, e in zip(data, embeddings):
-            vectors.append({
-                "id": d['id'],
-                "values": e['values'],
-                "metadata": {'text': d['text']}
-            })
+            for conversation in data:
+                chunks = text_splitter.split_text(conversation['context'])  # Assuming 'context' is the text to embed
 
-        self.index.upsert(
-            vectors=vectors,
-            namespace="ns1"
-        )
+                vectors = []
+                for i, chunk in enumerate(chunks):
+                    vector = self.embeddings.embed_documents([chunk])[0]  # Use OpenAIEmbeddings to get the vector
+                    vectors.append({
+                        "id": f"{conversation['role']}-{uuid.uuid4()}",  # Unique ID for each entry
+                        "values": vector,
+                        "metadata": {'text': chunk}
+                    })
 
-    def query_index(self, query, clean=True, top_k=3, model="multilingual-e5-large"):
+                self.index.upsert(vectors=vectors, namespace="ns1")
+            return "Successfully add data"
+        except Exception as e:
+            return str(e)
+
+    def query_index(self, query, top_k=3):
         """Query the index and return the top_k results."""
-        embedding = self.pc.inference.embed(
-            model=model,
-            inputs=[query],
-            parameters={"input_type": "query"}
-        )
+        embedding = self.embeddings.embed_documents([query])[0]  # Get embedding for the query
 
         results = self.index.query(
             namespace="ns1",
-            vector=embedding[0].values,
+            vector=embedding,
             top_k=top_k,
             include_values=False,
             include_metadata=True
         )
 
-        return self.clean_datasets(results) if clean else results
-
-    def clean_datasets(self, results):
-        """ Clean data from results """
-
-        if len(results['matches']) > 0:
-            return [result['metadata']['text'] for result in results['matches']]
-        return []
+        return results
 
     def delete_index(self):
         """Delete the Pinecone index."""
@@ -93,22 +108,50 @@ class PineconeClient:
 if __name__ == "__main__":
     pinecone_client = PineconeClient(index_name='chat-history')
     # pinecone_client.delete_index()
-    # data = {
-    #         "role": "ai",
-    #         "context": "A am fine"
-    #         }
-        
+    # Add some data
+    # Sample data entries
+    data_samples = [
+        {
+            "role": "user",
+            "context": "What are the latest advancements in artificial intelligence?"
+        },
+        {
+            "role": "ai",
+            "context": "Recent advancements include improvements in natural language processing, computer vision, and reinforcement learning."
+        },
+        {
+            "role": "user",
+            "context": "Can you explain how machine learning works?"
+        },
+        {
+            "role": "ai",
+            "context": "Machine learning involves training algorithms on large datasets to make predictions or decisions without explicit programming."
+        },
+        {
+            "role": "user",
+            "context": "What are some applications of AI in healthcare?"
+        },
+        {
+            "role": "ai",
+            "context": "AI is used in healthcare for diagnostics, personalized medicine, and predictive analytics to improve patient outcomes."
+        },
+        {
+            "role": "user",
+            "context": "How does reinforcement learning differ from supervised learning?"
+        },
+        {
+            "role": "ai",
+            "context": "Reinforcement learning is based on reward feedback, while supervised learning relies on labeled input-output pairs."
+        }
+    ]
 
+    pinecone_client.add_data(data_samples)
 
-    # pinecone_client.add_data(data)
-    # data = {
-    #         "role": "ai",
-    #         "context": "how about you??"
-    #         }
-    # pinecone_client.add_data(data)
+    # Describe index stats
     details = pinecone_client.describe_index_stats()
-    print(f" Total vectors count {details['total_vector_count']}")
+    print(f"Total vectors count: {details['total_vector_count']}")
 
-    query = "Alice Gou"
-    results = pinecone_client.query_index(query, clean=True)
+    # Query the index
+    query = "what is supervise learning"
+    results = pinecone_client.query_index(query)
     print(results)

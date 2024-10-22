@@ -17,6 +17,13 @@ from langchain_core.tools import render_text_description
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.globals import set_debug
+from langchain.agents import Tool
+from langserve import add_routes
+import uvicorn
+from fastapi import FastAPI
+from dotenv import load_dotenv
+
+load_dotenv()
 
 set_debug(False)
 
@@ -29,7 +36,7 @@ from vectore_store import PineconeClient
 from weather import WeatherTool
 from news import news_tool
 from date import date_tool
-from history import history_tool
+from read_docs import read_docs_tool, retrieve_data_tool
 
 class Chatbot(WeatherTool):
     """A simple chatbot that uses generative AI to assist users with questions and tasks."""
@@ -41,42 +48,59 @@ class Chatbot(WeatherTool):
         self.llm = ChatGroq(groq_api_key=self.groq_api_key, model_name=self.model)
 
         self.tools = self.__tools
+        self.relevant_keywords = self.__relevant_keywords
         self.rendered_tools = render_text_description(self.tools)
 
+        
         self.system_prompt = self.create_system_prompt()
         self.prompt = self.create_chat_prompt()
         self.output_parser = StrOutputParser()
         self.conversation = self.prompt | self.llm | self.output_parser
         self.memory = Memory()
-        self.pc = PineconeClient(index_name='chat-history')
+        # self.pc = PineconeClient(index_name='chat-history')
         self.chat_history = []
+        
+        
 
 
 
     @property
     def __tools(self):
         return [
-            history_tool,
+            # read_docs_tool,
+            # retrieve_data_tool,
             self.weather_tool,
             news_tool,
             date_tool,
-            
         ]
+    
+    @property
+    def __relevant_keywords(self):
+        keywords = [
+            "important", 
+            "urgent", 
+            "critical", 
+            "key",
+            "relevant"
+        ]
+        return keywords
 
     def create_system_prompt(self):
         """Creates the system prompt for the chatbot."""
 
         return f"""
             Your name is Jarvis, and you are a helpful assistant.
-            You always give short and direct answers.
-            Before using any tools, you will first review the chat-history or history_tool for context.
-            You are an assistant that has access to the following set of tools. 
-            Do not mention what tools you are using.
+            You provide short, clear, and direct answers to user queries.
             
-            Here are the names and descriptions for each tool:
+            You have the ability to remember context and utilize chat history to provide relevant and coherent responses.
+            If the user refers to something discussed earlier, make sure to acknowledge it and build on that context.
 
+            You have access to the following tools:
             {self.rendered_tools}
+
+            Always prioritize user satisfaction and strive to be informative and friendly in your interactions.
         """
+
 
 
     def create_chat_prompt(self):
@@ -120,9 +144,12 @@ class Chatbot(WeatherTool):
         
         return "general"
 
+    def api_call(self):
+        pass
+
     def run(self):
         """Starts the chatbot interaction loop, processing user inputs and generating responses."""
-        user_question= "Greet me."
+        user_question= "Greet me"
         response = self.user_query(user_question)
         print("Jarvis:", response)
         print(" ")
@@ -131,10 +158,12 @@ class Chatbot(WeatherTool):
 
             user_question = input("Ask a question: ")
             if user_question.lower() == "exit":
+                os.system('clear')
                 sys.exit(0)
 
-
+            os.system('clear')
             response = self.user_query(user_question)
+            print("User:", user_question)
             print("Jarvis:", response)
             print(" ")
 
@@ -149,16 +178,15 @@ class Chatbot(WeatherTool):
             # Doing this to store relevant conversation
             # Should improve this in the future
             # This is for long term memory
-            if len(ai_message.split(' ')) > 20:
-                data_message = data_message = {
-                        "context": AIMessage(ai_message),
-                        "metadata": {
-                            "timestamp": str(dt.datetime.now()),
-                            "user_id": 'human',
-                            "topic": self.extract_topic(ai_message)
-                        }
-                    }
-                self.pc.add_data(data_message)
+
+            # for keyword in self.relevant_keywords:
+            #     if keyword in ai_message.lower():
+
+            #         data_message = [{
+            #                 "role": "ai",
+            #                 "context": ai_message
+            #             }]
+            #         self.pc.add_data(data_message)
 
             # self.memory.add_message(user_message, ai_message)
 
