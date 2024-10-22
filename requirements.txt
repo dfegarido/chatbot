@@ -112,8 +112,8 @@ parse==1.20.2
 parso==0.8.4
 pexpect==4.9.0
 Pillow==10.0.1
-pinecone==5.3.1
-pinecone-client==5.0.1
+pinecone
+pinecone-client
 pinecone-plugin-assistant==0.3.0
 pinecone-plugin-inference==1.1.0
 pinecone-plugin-interface==0.0.7
@@ -137,7 +137,7 @@ pyee==11.1.1
 Pygments==2.18.0
 pypdf==4.3.1
 PyPika==0.48.9
-pyppeteer==2.0.0
+pyppeteer
 pyproject-toml==0.0.10
 pyquery==2.0.1
 PySocks==1.7.1
@@ -198,7 +198,7 @@ typing_extensions==4.12.2
 tzdata==2024.1
 unstructured==0.10.18
 url-normalize==1.4.3
-urllib3==2.2.3
+urllib3>=1.26.0
 uvicorn==0.23.2
 uvloop==0.17.0
 w3lib==2.2.1
