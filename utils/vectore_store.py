@@ -2,19 +2,22 @@ from langchain_core.documents import Document
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from pinecone import Pinecone, ServerlessSpec
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_pinecone import PineconeEmbeddings, PineconeVectorStore
 import requests
 import os
 import time
 import uuid
 
 class PineconeClient:
-    def __init__(self, index_name="quickstart", dimension=768, metric="cosine"):  # Adjusted dimension for OpenAI
+    def __init__(self, index_name="quickstart", dimension=768, metric="cosine"):
         self.api_key = os.getenv("PINECONE_API_KEY")
         self.pc = Pinecone(api_key=self.api_key)
         self.index_name = index_name
         self.dimension = dimension
         self.metric = metric
-        self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+        # self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+        self.embeddings = PineconeEmbeddings(model="multilingual-e5-large")
+        self.index = None
         self._create_index()
 
     def _create_index(self):
@@ -52,38 +55,47 @@ class PineconeClient:
         else:
             raise Exception(f"Error fetching embedding: {response.text}")
 
+    @property
+    def vector_store(self):
+        return PineconeVectorStore(
+            index=self.index,
+            embedding=self.embeddings
+        )
 
-    def vector_store(self, docs):
-        return PineconeVectorStore.from_documents(docs, self.embeddings, index_name=self.index_name)
+    @property
+    def retriever(self, query: str) -> list:
+        return self.vector_store.as_retriever()
 
     def add_data(self, data):
         """Embed the input data and upsert it to the index."""
+
         try:
             text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=200,
-                chunk_overlap=20
+                chunk_size=10000,
+                chunk_overlap=200
             )
 
             for conversation in data:
-                chunks = text_splitter.split_text(conversation['context'])  # Assuming 'context' is the text to embed
-
+                chunks = text_splitter.split_text(conversation.context)  # Assuming 'context' is the text to embed
                 vectors = []
                 for i, chunk in enumerate(chunks):
-                    vector = self.embeddings.embed_documents([chunk])[0]  # Use OpenAIEmbeddings to get the vector
+                    vector = self.embeddings.embed_documents([chunk])[0] 
                     vectors.append({
-                        "id": f"{conversation['role']}-{uuid.uuid4()}",  # Unique ID for each entry
+                        "id": f"{conversation.role}-{uuid.uuid4()}",  # Unique ID for each entry
                         "values": vector,
                         "metadata": {'text': chunk}
                     })
-
+                print(f"Inserting {chunk}")
                 self.index.upsert(vectors=vectors, namespace="ns1")
-            return "Successfully add data"
+            print(f"Successfully add data : total {len(data)}")
         except Exception as e:
-            return str(e)
+            print(f"Error adding data : {str(e)}")
 
-    def query_index(self, query, top_k=3):
+
+    def query_index(self, query, top_k=1):
         """Query the index and return the top_k results."""
-        embedding = self.embeddings.embed_documents([query])[0]  # Get embedding for the query
+
+        embedding = self.embeddings.embed_documents([query.query])[0]  # Get embedding for the query
 
         results = self.index.query(
             namespace="ns1",
@@ -98,6 +110,7 @@ class PineconeClient:
     def delete_index(self):
         """Delete the Pinecone index."""
         self.pc.delete_index(self.index_name)
+
         print(f"Index '{self.index_name}' deleted.")
 
     def describe_index_stats(self):
@@ -114,34 +127,6 @@ if __name__ == "__main__":
         {
             "role": "user",
             "context": "What are the latest advancements in artificial intelligence?"
-        },
-        {
-            "role": "ai",
-            "context": "Recent advancements include improvements in natural language processing, computer vision, and reinforcement learning."
-        },
-        {
-            "role": "user",
-            "context": "Can you explain how machine learning works?"
-        },
-        {
-            "role": "ai",
-            "context": "Machine learning involves training algorithms on large datasets to make predictions or decisions without explicit programming."
-        },
-        {
-            "role": "user",
-            "context": "What are some applications of AI in healthcare?"
-        },
-        {
-            "role": "ai",
-            "context": "AI is used in healthcare for diagnostics, personalized medicine, and predictive analytics to improve patient outcomes."
-        },
-        {
-            "role": "user",
-            "context": "How does reinforcement learning differ from supervised learning?"
-        },
-        {
-            "role": "ai",
-            "context": "Reinforcement learning is based on reward feedback, while supervised learning relies on labeled input-output pairs."
         }
     ]
 

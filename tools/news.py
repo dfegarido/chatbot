@@ -1,73 +1,106 @@
 import urllib.parse
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_core.tools import tool
+from langchain_core.tools import tool, StructuredTool
 from bs4 import BeautifulSoup
 from requests_html import HTMLSession
+import pyppdf.patch_pyppeteer
+from uuid import uuid4
+import sys, os
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_pinecone import PineconeVectorStore
+from langchain.agents import Tool
+import aiohttp
+from pydantic import BaseModel, Field
+from typing import List
 
-@tool("news_tool", return_direct=True, response_format="content_and_artifact")
-def news_tool(query: str) -> str:
-    """
-    Fetch the latest news articles based on a search query.
+# Add src to Python Path to avoid errors in module import
+sys.path.insert(0, os.path.abspath("./utils/"))
+sys.path.insert(0, os.path.abspath("./tools/"))
 
-    This tool allows you to search for articles on any topic from GMA News. 
-    Simply provide a search query (e.g., “latest tech news”), and the tool will return 
-    the most recent articles related to your query.
+from vectore_store import PineconeClient
 
-    Example:
-    Searching for “latest tech news” might return: 
-    "Apple has unveiled the new iPhone 13! According to CNN, it features 
-    an upgraded camera and better battery life. Read more here!"
+# Initialize Pinecone client
+pinecone_client = PineconeClient(index_name='news', dimension=1024)
 
-    Args:
-        query (str): The topic you want to search for.
+# Define Pydantic models
+class NewsQuery(BaseModel):
+    '''Model for the news query input'''
+    query: str = Field(..., description="Search query for news articles.")
 
-    Returns:
-        str: The content of the first relevant article found.
-    """
+class NewsArticle(BaseModel):
+    '''Model for a news article'''
+    role: str
+    context: str
 
-    # Prepare the user-agent header to mimic a browser request
+class NewsResponse(BaseModel):
+    '''Model for the response containing news articles'''
+    articles: List[NewsArticle]
+
+def get_news(query: NewsQuery) -> str:
+    results = pinecone_client.query_index(query=query)
+    return ''.join(matches['metadata']['text'] for matches in results['matches'])
+
+def update_db(data: List[NewsArticle]):
+    pinecone_client.add_data(data)
+    # Describe index stats
+    details = pinecone_client.describe_index_stats()
+    print(f"Total vectors count: {details['total_vector_count']}")
+
+def news_update() -> NewsResponse:
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
+    pinecone_client.delete_index()
+    pinecone_client._create_index()
 
-    # Construct the search query
-    query = f"Latest news {query}"
-    encoded_query = urllib.parse.quote(query)
-    
-    # Define the base URL for GMA News
     gma_network = "https://www.gmanetwork.com/news"
-    # Construct the search URL
-    news_url = f"{gma_network}/search/?search_it#gsc.tab=0&gsc.q={encoded_query}&gsc.sort=date"
+    news_url = f"{gma_network}/archives/just_in/"
 
-    # Create an HTML session to handle the request
     session = HTMLSession()
-    
-    # Fetch the news search page
-    response = session.get(news_url, headers=headers)
-    
-    # Render the JavaScript on the page
-    response.html.render(sleep=2)  # Wait for 2 seconds for JavaScript execution
-    
-    # Parse the rendered HTML to find article links
+    response = session.get(news_url, headers=headers, verify=True)
+    response.raise_for_status()
+    response.html.render(sleep=2)
+
     soup = BeautifulSoup(response.html.html, 'html.parser')
-    content = soup.find_all('a', attrs={'class': 'gs-title'})
-    
-    # Check if any articles were found
-    if not content:
-        return "No articles found."
+    contents = soup.find_all('a', attrs={'class': 'story_link story'})
 
-    # Get the href of the first article
-    href = content[0].get('href')
-    
-    # Use WebBaseLoader to load the content of the article
-    loader = WebBaseLoader(href)
-    
-    # Return the loaded content
-    docs = loader.load()[0]
-    return docs.page_content
+    if not contents:
+        return NewsResponse(articles=[])
 
+    articles = []
+
+    for content in contents:
+        href = content.get('href')
+        loader = WebBaseLoader(href)
+        [docs] = loader.load()
+
+        docs_data = NewsArticle(role="system", context=docs.page_content)
+        articles.append(docs_data)
+
+    update_db(articles)
+
+    return NewsResponse(articles=articles)
+
+@tool
+def news_tool(query: str) -> str:
+    """
+        Fetch the latest news articles based on a search query.
+
+        This tool retrieves the most recent articles from GMA News related to a provided 
+        search query. Simply input your query (e.g., “latest tech news”), and the tool 
+        will return relevant articles.
+
+        Args:
+            query (str): A string representing the search term for news articles.
+
+        Returns:
+            Tool: A tool containing the latest news articles related to the query.
+    """
+
+    return 'this is a testing setup'
 
 if __name__ == '__main__':
-    query = "Latest news about typhoon"
-    res = news_tool(query)
-    breakpoint()
+    query_input = "voltes v"
+    res = get_news(NewsQuery(query=query_input))
+
+    print(res)
