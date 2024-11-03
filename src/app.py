@@ -14,7 +14,7 @@ from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.globals import set_debug
 from dotenv import load_dotenv
 import streamlit as st
-from langchain_ollama import OllamaLLM, OllamaEmbeddings, ChatOllama
+# from langchain_ollama import OllamaLLM, OllamaEmbeddings, ChatOllama
 from datetime import datetime
 from fastapi import FastAPI
 from langserve import add_routes
