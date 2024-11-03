@@ -9,7 +9,6 @@ import sys, os
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain.agents import Tool
-import aiohttp
 from pydantic import BaseModel, Field
 from typing import List
 
