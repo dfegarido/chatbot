@@ -191,13 +191,12 @@ transformers==4.45.2
 trio==0.27.0
 trio-websocket==0.11.1
 typer==0.9.0
-types-requests==2.32.0.20241016
 typing-inspect==0.9.0
 typing_extensions==4.12.2
 tzdata==2024.1
 unstructured==0.10.18
 url-normalize==1.4.3
-urllib3==1.26.20
+urllib3<=2.0.0
 uvicorn==0.23.2
 uvloop==0.17.0
 w3lib==2.2.1
