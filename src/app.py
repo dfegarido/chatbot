@@ -10,7 +10,6 @@ from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
-import streamlit as st
 from fastapi import FastAPI
 from langserve import add_routes
 import uvicorn
@@ -97,20 +96,6 @@ class Chatbot:
         self.chat_history.append(AIMessage(content=response))
         self.memory.add_message(user_input, response)
         return {"response": response, "chat_history": self.chat_history}
-
-    def run_streamlit_app(self):
-        """Runs the Streamlit application for the chatbot."""
-        st.title("Chatbot Assistant")
-        user_input = st.text_input("Ask me anything:")
-        start_time = datetime.now()
-        if st.button("Send"):
-            if user_input:
-                response = self.user_query(user_input)
-                end_time = datetime.now()
-                st.write(f"Process time: {end_time - start_time}")
-                st.write("**Jarvis:**", response)
-            else:
-                st.write("Please enter a question.")
 
     def run_server(self):
         """Runs the FastAPI server."""
