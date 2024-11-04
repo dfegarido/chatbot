@@ -1,23 +1,27 @@
-# Use the official Python 3.12 image as a parent image
+# Use the official Python image as a base
 FROM python:3.10-slim
 
+# Install necessary system dependencies for lxml
+RUN apt-get update && apt-get install -y \
+    libxml2-dev \
+    libxslt1-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set the working directory in the container
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt ./
+# Copy the requirements file to the container
+COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
+# Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your application code and .env file
-COPY ./ .
+# Copy the entire project to the working directory
+COPY . .
 
-# If your .env file is in the src directory, copy it to the working directory
-COPY .env ./
-
-# Command to run your application
-CMD ["python", "src/app.py"]
-
-# Expose a port if your app is a web service (optional)
+# Expose the port the app runs on
 EXPOSE 8000
+
+# Command to run the application
+CMD ["python", "src/app.py"]
