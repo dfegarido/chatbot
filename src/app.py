@@ -10,9 +10,10 @@ from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from langserve import add_routes
 import uvicorn
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -20,10 +21,10 @@ load_dotenv()
 sys.path.insert(0, os.path.abspath("./utils/"))
 sys.path.insert(0, os.path.abspath("./tools/"))
 
-from translator import translate
 from voice import voice_converter
 
-
+class RequestBody(BaseModel):
+    user_input: str
 class Chatbot:
     """A simple chatbot that uses generative AI to assist users with questions and tasks."""
 
@@ -56,9 +57,10 @@ class Chatbot:
         """Creates the system prompt for the chatbot."""
         return f"""
             Your name is Rootay, a friendly and helpful assistant designed to provide concise, clear,
-            and direct answers to user inquiries. You can remember context and utilize chat history
-            to deliver relevant and coherent responses. Engage with a conversational tone that includes
-            appropriate humor and empathy, making each interaction enjoyable for the user.
+            and direct answers to user inquiries. 
+            You can remember context and utilize chat history to deliver relevant and coherent responses.
+            Maintain a formal tone while ensuring that your answers are straightforward and to the point,
+            focusing on delivering accurate information without unnecessary embellishment.
         """
 
     def create_chat_prompt(self):
@@ -85,15 +87,28 @@ class Chatbot:
 
     def get_response(self, user_input):
         """Generates a response to the user's input using the conversation chain."""
-        translated = translate(user_input, model_id=self.tl_en)
+
         result = self.conversation.invoke(
             {
-                "human_input": translated,
+                "human_input": user_input,
                 "chat_history": self.chat_history[-10:],  # Use the last 10 messages
             }
         )
 
-        return translate(result, model_id=self.en_tl)
+        template = f"""
+            Human: {user_input}
+
+            Respond in Tagalog with a warm and friendly response.
+            Remove parenthesis and english because I am processing 
+            this into TTS
+            Use the following context:
+            {result}
+        """
+
+        llm_response = self.llm.invoke(template)
+
+        voice_converter(llm_response.content)
+        return llm_response.content
 
     def user_query(self, user_question):
         """Trigger to start conversation."""
@@ -102,19 +117,23 @@ class Chatbot:
         self.chat_history.append(AIMessage(content=response))
         return response
 
-    def chat_route_handler(self, request):
-        """Handles chat requests and generates responses."""
-        user_input = request.get("user_input")
-        response = self.get_response(user_input)
-        self.chat_history.append(HumanMessage(content=user_input))
-        self.chat_history.append(AIMessage(content=response))
-        return {"response": response, "chat_history": self.chat_history}
+    
 
     def run_server(self):
+        from langchain_core.runnables import Runnable
         """Runs the FastAPI server."""
         app = FastAPI(title="Jarvis API Server", version='1.0', description='This is a Jarvis server')
-        add_routes(app, self.conversation, path='/chat')
-        uvicorn.run(app, host='0.0.0.0', port=8000)
+
+        @app.post('/chat')
+        def chat_route_handler(data: RequestBody):
+            """Handles chat requests and generates responses."""
+            user_input = data.user_input
+            response = self.get_response(user_input)
+            # self.chat_history.append(HumanMessage(content=user_input))
+            # self.chat_history.append(AIMessage(content=response))
+            return {"response": response, "chat_history": self.chat_history}
+
+        uvicorn.run(app, host='0.0.0.0', port=5000)
 
     def run(self):
         """Runs the chatbot in a console interface."""
@@ -123,9 +142,9 @@ class Chatbot:
             if user_input in ['exit']:
                 sys.exit(1)
             response = self.get_response(user_input)
-            print(f"Ruthay: {response}")
+            # print(f"Ruthay: {response}")
             voice_converter(response)
 
 if __name__ == "__main__":
     chatbot = Chatbot()
-    chatbot.run()
+    chatbot.run_server()

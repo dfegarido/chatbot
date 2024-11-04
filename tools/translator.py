@@ -12,9 +12,7 @@ def translate(text, model_id):
     # Generate translation with specified max_new_tokens
     generated_tokens = model.generate(
         **encoded_input,
-        max_new_tokens=50,  # Adjust this value as needed
         num_beams=4,        # Use beam search for better quality
-        early_stopping=True  # Stop early if all beams finish
     )
 
 
