@@ -46,13 +46,16 @@ class Chatbot:
         self.output_parser = StrOutputParser()
         self.conversation = self.prompt | self.llm | self.output_parser
 
+        self.tl_en = "Helsinki-NLP/opus-mt-tl-en"
+        self.en_tl = "Helsinki-NLP/opus-mt-en-tl"
+
         
         self.chat_history = self.load_chat_history()
 
     def create_system_prompt(self):
         """Creates the system prompt for the chatbot."""
         return f"""
-            Your name is Ruthay, a friendly and helpful assistant designed to provide concise, clear,
+            Your name is Rootay, a friendly and helpful assistant designed to provide concise, clear,
             and direct answers to user inquiries. You can remember context and utilize chat history
             to deliver relevant and coherent responses. Engage with a conversational tone that includes
             appropriate humor and empathy, making each interaction enjoyable for the user.
@@ -82,12 +85,15 @@ class Chatbot:
 
     def get_response(self, user_input):
         """Generates a response to the user's input using the conversation chain."""
-        return self.conversation.invoke(
+        translated = translate(user_input, model_id=self.tl_en)
+        result = self.conversation.invoke(
             {
-                "human_input": user_input,
+                "human_input": translated,
                 "chat_history": self.chat_history[-10:],  # Use the last 10 messages
             }
         )
+
+        return translate(result, model_id=self.en_tl)
 
     def user_query(self, user_question):
         """Trigger to start conversation."""
@@ -117,9 +123,8 @@ class Chatbot:
             if user_input in ['exit']:
                 sys.exit(1)
             response = self.get_response(user_input)
-            translate_to_tagalog = translate(response)
-            print(f"Ruthay: {translate(response)}")
-            voice_converter(translate_to_tagalog)
+            print(f"Ruthay: {response}")
+            voice_converter(response)
 
 if __name__ == "__main__":
     chatbot = Chatbot()

@@ -1,13 +1,11 @@
 # Load model directly
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-import torch
 
-model_id = "Helsinki-NLP/opus-mt-en-tl"
 
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
+def translate(text, model_id):
 
-def translate(text):
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
 
     encoded_input = tokenizer(text, return_tensors="pt")
 
