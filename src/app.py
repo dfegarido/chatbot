@@ -133,7 +133,7 @@ class Chatbot:
             # self.chat_history.append(AIMessage(content=response))
             return {"response": response, "chat_history": self.chat_history}
 
-        uvicorn.run(app, host='0.0.0.0', port=5000)
+        uvicorn.run(app, host='0.0.0.0', port=8000)
 
     def run(self):
         """Runs the chatbot in a console interface."""
