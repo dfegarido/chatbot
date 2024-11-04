@@ -17,9 +17,11 @@ from pydantic import BaseModel
 
 load_dotenv()
 
+current_directory = os.getcwd()
+
 # Add src to Python Path to avoid errors in module import
-sys.path.insert(0, os.path.abspath("./utils/"))
-sys.path.insert(0, os.path.abspath("./tools/"))
+sys.path.insert(0, os.path.join(current_directory, "utils"))
+sys.path.insert(0, os.path.join(current_directory, "tools"))
 
 from voice import voice_converter
 
