@@ -69,6 +69,7 @@ class Chatbot:
     def load_chat_history(self):
         """Loads the chat history from memory."""
         # messages = self.memory.get_messages()
+        messages = []
         return [HumanMessage(content=msg[1]) if msg[0] == 'human' else AIMessage(content=msg[1]) for msg in messages]
 
     def get_response(self, user_input):
