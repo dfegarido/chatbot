@@ -20,7 +20,7 @@ load_dotenv()
 sys.path.insert(0, os.path.abspath("./utils/"))
 sys.path.insert(0, os.path.abspath("./tools/"))
 
-from memory import Memory
+# from memory import Memory
 
 class Chatbot:
     """A simple chatbot that uses generative AI to assist users with questions and tasks."""
@@ -44,7 +44,7 @@ class Chatbot:
         self.output_parser = StrOutputParser()
         self.conversation = self.prompt | self.llm | self.output_parser
 
-        self.memory = Memory()
+        # self.memory = Memory()
         self.chat_history = self.load_chat_history()
 
     def create_system_prompt(self):
@@ -68,7 +68,7 @@ class Chatbot:
 
     def load_chat_history(self):
         """Loads the chat history from memory."""
-        messages = self.memory.get_messages()
+        # messages = self.memory.get_messages()
         return [HumanMessage(content=msg[1]) if msg[0] == 'human' else AIMessage(content=msg[1]) for msg in messages]
 
     def get_response(self, user_input):
@@ -85,7 +85,7 @@ class Chatbot:
         response = self.get_response(user_question)
         self.chat_history.append(HumanMessage(content=user_question))
         self.chat_history.append(AIMessage(content=response))
-        self.memory.add_message(user_question, response)
+        # self.memory.add_message(user_question, response)
         return response
 
     def chat_route_handler(self, request):
@@ -94,7 +94,7 @@ class Chatbot:
         response = self.get_response(user_input)
         self.chat_history.append(HumanMessage(content=user_input))
         self.chat_history.append(AIMessage(content=response))
-        self.memory.add_message(user_input, response)
+        # self.memory.add_message(user_input, response)
         return {"response": response, "chat_history": self.chat_history}
 
     def run_server(self):
