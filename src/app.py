@@ -20,7 +20,9 @@ load_dotenv()
 sys.path.insert(0, os.path.abspath("./utils/"))
 sys.path.insert(0, os.path.abspath("./tools/"))
 
-# from memory import Memory
+from translator import translate
+from voice import voice_converter
+
 
 class Chatbot:
     """A simple chatbot that uses generative AI to assist users with questions and tasks."""
@@ -44,13 +46,13 @@ class Chatbot:
         self.output_parser = StrOutputParser()
         self.conversation = self.prompt | self.llm | self.output_parser
 
-        # self.memory = Memory()
+        
         self.chat_history = self.load_chat_history()
 
     def create_system_prompt(self):
         """Creates the system prompt for the chatbot."""
         return f"""
-            Your name is Jarvis, a friendly and helpful assistant designed to provide concise, clear,
+            Your name is Ruthay, a friendly and helpful assistant designed to provide concise, clear,
             and direct answers to user inquiries. You can remember context and utilize chat history
             to deliver relevant and coherent responses. Engage with a conversational tone that includes
             appropriate humor and empathy, making each interaction enjoyable for the user.
@@ -58,17 +60,23 @@ class Chatbot:
 
     def create_chat_prompt(self):
         """Constructs the chat prompt template using the system prompt and placeholders."""
+
+        template = """
+            dont include parenthesis and respond always in English
+            {human_input}
+        """
+
         return ChatPromptTemplate.from_messages(
             [
                 SystemMessage(content=self.system_prompt),
                 MessagesPlaceholder(variable_name="chat_history", optional=True),
-                HumanMessagePromptTemplate.from_template("{human_input}"),
+                HumanMessagePromptTemplate.from_template(template),
             ]
         )
 
     def load_chat_history(self):
         """Loads the chat history from memory."""
-        # messages = self.memory.get_messages()
+
         messages = []
         return [HumanMessage(content=msg[1]) if msg[0] == 'human' else AIMessage(content=msg[1]) for msg in messages]
 
@@ -86,7 +94,6 @@ class Chatbot:
         response = self.get_response(user_question)
         self.chat_history.append(HumanMessage(content=user_question))
         self.chat_history.append(AIMessage(content=response))
-        # self.memory.add_message(user_question, response)
         return response
 
     def chat_route_handler(self, request):
@@ -95,7 +102,6 @@ class Chatbot:
         response = self.get_response(user_input)
         self.chat_history.append(HumanMessage(content=user_input))
         self.chat_history.append(AIMessage(content=response))
-        # self.memory.add_message(user_input, response)
         return {"response": response, "chat_history": self.chat_history}
 
     def run_server(self):
@@ -111,8 +117,10 @@ class Chatbot:
             if user_input in ['exit']:
                 sys.exit(1)
             response = self.get_response(user_input)
-            print(f"Jarvis: {response}")
+            translate_to_tagalog = translate(response)
+            print(f"Ruthay: {translate(response)}")
+            voice_converter(translate_to_tagalog)
 
 if __name__ == "__main__":
     chatbot = Chatbot()
-    chatbot.run_server()
+    chatbot.run()
