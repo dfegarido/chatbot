@@ -70,6 +70,9 @@ class Chatbot:
 
         template = """
             dont include parenthesis and respond always in English
+            Respond in Tagalog with a warm and friendly response.
+            Remove parenthesis and english because I am processing 
+            this into TTS
             {human_input}
         """
 
@@ -97,20 +100,8 @@ class Chatbot:
             }
         )
 
-        template = f"""
-            Human: {user_input}
-
-            Respond in Tagalog with a warm and friendly response.
-            Remove parenthesis and english because I am processing 
-            this into TTS
-            Use the following context:
-            {result}
-        """
-
-        llm_response = self.llm.invoke(template)
-
-        voice_converter(llm_response.content)
-        return llm_response.content
+        voice_converter(result)
+        return result
 
     def user_query(self, user_question):
         """Trigger to start conversation."""
@@ -144,9 +135,8 @@ class Chatbot:
             if user_input in ['exit']:
                 sys.exit(1)
             response = self.get_response(user_input)
-            # print(f"Ruthay: {response}")
-            voice_converter(response)
+            print(f"Ruthay: {response}")
 
 if __name__ == "__main__":
     chatbot = Chatbot()
-    chatbot.run_server()
+    chatbot.run()
