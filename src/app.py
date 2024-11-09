@@ -16,6 +16,7 @@ from langserve import add_routes
 import uvicorn
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
+import asyncio
 
 load_dotenv()
 
@@ -95,18 +96,15 @@ class Chatbot:
         messages = []
         return [HumanMessage(content=msg[1]) if msg[0] == 'human' else AIMessage(content=msg[1]) for msg in messages]
 
-    def get_response(self, user_input):
+    async def get_response(self, user_input):
         """Generates a response to the user's input using the conversation chain."""
 
-        result = self.conversation.invoke(
-            {
+        result = await asyncio.to_thread(self.conversation.invoke, {
                 "human_input": user_input,
                 "chat_history": self.chat_history[-10:],  # Use the last 10 messages
-            }
-        )
+            })
 
-        voice_converter(result)
-        return result
+        return voice_converter(result)
 
     def user_query(self, user_question):
         """Trigger to start conversation."""
@@ -137,11 +135,10 @@ class Chatbot:
             allow_headers=["*"],  # Allows all headers
         )
         @app.post('/chat')
-        def chat_route_handler(data: RequestBody):
+        async def chat_route_handler(data: RequestBody):
             """Handles chat requests and generates responses."""
             user_input = data.user_input
-            print(f'user input: {user_input}')
-            response = self.get_response(user_input)
+            response = await self.get_response(user_input)
             # self.chat_history.append(HumanMessage(content=user_input))
             # self.chat_history.append(AIMessage(content=response))
             return {"response": response, "chat_history": self.chat_history}
