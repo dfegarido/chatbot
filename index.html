@@ -71,7 +71,7 @@
                     }
                 }
 
-                resultDiv.innerHTML = 'Interim: ' + interimTranscript + '<br>Final: ' + finalTranscript;
+                resultDiv.innerHTML = 'Input : ' + interimTranscript + finalTranscript;
             };
 
             recognition.onerror = function(event) {
@@ -101,6 +101,8 @@
                         console.error("Error playing audio:", error);
                     });
                 }
+                finalTranscript = '';
+                resultDiv.innerHTML = 'Listening...';
             };
 
             // Start listening when the button is clicked
