@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from langserve import add_routes
 import uvicorn
 from pydantic import BaseModel
+from fastapi.responses import FileResponse
 
 load_dotenv()
 
@@ -44,7 +45,10 @@ class Chatbot:
             temperature=0.7,
             max_retries=2
         )
-        
+
+        self.host = os.getenv("HOST", "0.0.0.0")
+        self.port = os.getenv("PORT", 5000)
+    
         self.system_prompt = self.create_system_prompt()
         self.prompt = self.create_chat_prompt()
         self.output_parser = StrOutputParser()
@@ -141,6 +145,17 @@ class Chatbot:
             # self.chat_history.append(HumanMessage(content=user_input))
             # self.chat_history.append(AIMessage(content=response))
             return {"response": response, "chat_history": self.chat_history}
+
+        # Route to serve the voice file (voice.mp3)
+        @app.get("/voice/")
+        async def get_voice():
+            """Returns the voice file (voice.mp3)."""
+            file_path = os.getcwd()
+            file_path = f"{file_path}/api/output/voice.mp3"  # Path to your voice.mp3 file in the static folder
+            print(file_path)
+            if os.path.exists(file_path):
+                return FileResponse(file_path)
+            return {"error": "Voice file not found."}
 
         uvicorn.run(app, host='0.0.0.0', port=5000)
 
