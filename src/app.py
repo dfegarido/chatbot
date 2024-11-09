@@ -11,6 +11,7 @@ from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from langserve import add_routes
 import uvicorn
 from pydantic import BaseModel
@@ -113,20 +114,35 @@ class Chatbot:
     
 
     def run_server(self):
-        from langchain_core.runnables import Runnable
+
         """Runs the FastAPI server."""
         app = FastAPI(title="Jarvis API Server", version='1.0', description='This is a Jarvis server')
-
+        
+        origins = [
+            "http://localhost:8000",  # Frontend app's origin (adjust if your frontend is on a different port)
+            "http://localhost:5000",       # In case your frontend is being served without a port
+            "*",
+            'https://fb5a-136-158-1-163.ngrok-free.app',
+        ]
+        
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,  # Allows your frontend origins to make requests to the API
+            allow_credentials=True,
+            allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+            allow_headers=["*"],  # Allows all headers
+        )
         @app.post('/chat')
         def chat_route_handler(data: RequestBody):
             """Handles chat requests and generates responses."""
             user_input = data.user_input
+            print(f'user input: {user_input}')
             response = self.get_response(user_input)
             # self.chat_history.append(HumanMessage(content=user_input))
             # self.chat_history.append(AIMessage(content=response))
             return {"response": response, "chat_history": self.chat_history}
 
-        uvicorn.run(app, host='0.0.0.0', port=8000)
+        uvicorn.run(app, host='0.0.0.0', port=5000)
 
     def run(self):
         """Runs the chatbot in a console interface."""
@@ -139,4 +155,4 @@ class Chatbot:
 
 if __name__ == "__main__":
     chatbot = Chatbot()
-    chatbot.run()
+    chatbot.run_server()

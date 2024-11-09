@@ -9,5 +9,5 @@ def voice_converter(text):
     tts = gTTS(text=text, lang=language, slow=False, tld='com.au')  # slow=False for normal speed
 
     # Save the converted audio to a file
-    tts.save("output/voice.mp3")
+    tts.save("api/output/voice.mp3")
 

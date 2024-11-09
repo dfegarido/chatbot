@@ -1,24 +1,15 @@
-import requests as req
-import streamlit as st
+import http.server
+import socketserver
+import os
 
+# Set the directory to the folder containing your HTML file
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-def get_ai_response(text_input):
-    url="http://localhost:8000/ollama/invoke"
-    input_text = {
-        "input":{
-            "question": text_input
-        }
-    }
-    response=req.post(url, json=input_text)
+# Set up the request handler to serve files
+Handler = http.server.SimpleHTTPRequestHandler
 
-
-    return response.json()['output']
-
-
-
-if __name__ == "__main__":
-
-    st.title("Langchain Demo API")
-    text_input = st.text_input("Enter your question")
-
-    st.write(get_ai_response(text_input))
+# Start the server on port 8000
+PORT = 8000
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print(f"Serving on port {PORT}...")
+    httpd.serve_forever()

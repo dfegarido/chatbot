@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #start-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #result-output {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Speech Recognition Demo</h1>
+    <button id="start-btn">Start Speech Recognition</button>
+    <div id="result"></div>
+    <audio id="audio-player">
+        <source id="audio-source" src="output/voice.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    <div id="result-output"></div>
+
+    <script>
+        // Check if the browser supports SpeechRecognition
+        const startBtn = document.getElementById('start-btn');
+        const resultDiv = document.getElementById('result');
+        const audioPlayer = document.getElementById('audio-player');
+        const resultOutputDiv = document.getElementById('result-output');
+        
+        if (!('webkitSpeechRecognition' in window)) {
+            resultDiv.innerHTML = 'Speech Recognition is not supported in this browser.';
+        } else {
+            const recognition = new webkitSpeechRecognition();
+
+            recognition.continuous = false; // Keep listening until the user stops
+            recognition.interimResults = true; // Show partial results as the user speaks
+            recognition.lang = 'en-US'; // Set the language for recognition
+
+            let finalTranscript = ''; // Initialize the final transcript here
+
+            recognition.onstart = function() {
+                resultDiv.innerHTML = 'Listening...';
+            };
+
+            recognition.onresult = function(event) {
+                let interimTranscript = '';
+
+                // Process each result in the event
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const result = event.results[i];
+                    if (result.isFinal) {
+                        finalTranscript += result[0].transcript;
+                    } else {
+                        interimTranscript += result[0].transcript;
+                    }
+                }
+
+                resultDiv.innerHTML = 'Interim: ' + interimTranscript + '<br>Final: ' + finalTranscript;
+            };
+
+            recognition.onerror = function(event) {
+                resultDiv.innerHTML = 'Error occurred: ' + event.error;
+            };
+
+            recognition.onend = async function() {
+                resultDiv.innerHTML += '<br>Speech recognition ended.';
+                startBtn.disabled = false;
+                startBtn.innerHTML = 'Start Speech Recognition'; // Reset the button text
+
+                let is_done = false;
+                is_done = await sendPostRequest(finalTranscript);
+
+                // Reload the audio to refresh it with a new query parameter
+                if (audioPlayer && is_done) {
+                    const audioSource = document.getElementById('audio-source');
+                    const timestamp = new Date().getTime(); // Generate a unique timestamp
+                    audioSource.src = "output/voice.mp3?" + timestamp; // Add timestamp to the query string
+
+                    audioPlayer.load(); // Reload the audio element to reflect the new URL
+                }
+
+                // Play the audio when speech recognition ends
+                if (audioPlayer && is_done) {
+                    audioPlayer.play().catch(error => {
+                        console.error("Error playing audio:", error);
+                    });
+                }
+            };
+
+            // Start listening when the button is clicked
+            startBtn.onclick = function() {
+                recognition.start();
+                startBtn.disabled = true; // Disable button after starting
+                startBtn.innerHTML = 'Listening...';
+            };
+        }
+
+        // Send the user input to the server via a POST request
+        function sendPostRequest(userInput) {
+            const url = "http://192.168.1.79:5000/chat"; // Make sure the server is running here
+            const data = { user_input: userInput };
+
+            return fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Success:", data);
+                resultOutputDiv.innerHTML = data["response"];
+                return true
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+                resultOutputDiv.innerHTML = 'Error: ' + error;
+                return true
+            });
+        }
+    </script>
+
+</body>
+</html>
