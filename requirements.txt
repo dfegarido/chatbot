@@ -5,3 +5,6 @@ fastapi==0.115.4
 langserve==0.3.0
 uvicorn==0.32.0
 gTTS==2.5.3
+accelerate
+torch
+transformers==4.28.0

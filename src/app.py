@@ -75,12 +75,8 @@ class Chatbot:
         """Constructs the chat prompt template using the system prompt and placeholders."""
 
         template = """
-            dont include parenthesis and respond always in English
-            Respond in Tagalog with a warm and friendly response.
-            Remove parenthesis and english because I am processing 
-            this into TTS
             {human_input}
-        """
+            """
 
         return ChatPromptTemplate.from_messages(
             [
@@ -98,13 +94,14 @@ class Chatbot:
 
     async def get_response(self, user_input):
         """Generates a response to the user's input using the conversation chain."""
-
+        print(self.chat_history)
         result = await asyncio.to_thread(self.conversation.invoke, {
                 "human_input": user_input,
                 "chat_history": self.chat_history[-10:],  # Use the last 10 messages
             })
+        env = os.getenv("ENV", "dev")
+        return voice_converter(result) if env != "dev" else result
 
-        return voice_converter(result)
 
     def user_query(self, user_question):
         """Trigger to start conversation."""
@@ -114,17 +111,13 @@ class Chatbot:
         return response
 
     
-
     def run_server(self):
 
         """Runs the FastAPI server."""
         app = FastAPI(title="Jarvis API Server", version='1.0', description='This is a Jarvis server')
         
         origins = [
-            "http://localhost:8000",  # Frontend app's origin (adjust if your frontend is on a different port)
-            "http://localhost:5000",       # In case your frontend is being served without a port
             "*",
-            'https://fb5a-136-158-1-163.ngrok-free.app',
         ]
         
         app.add_middleware(
@@ -156,15 +149,21 @@ class Chatbot:
 
         uvicorn.run(app, host='0.0.0.0', port=5000)
 
-    def run(self):
+    async def run(self):
         """Runs the chatbot in a console interface."""
         while True:
+            print(" ")
             user_input = input("Ask me anything: ")
             if user_input in ['exit']:
                 sys.exit(1)
-            response = self.get_response(user_input)
+            response = await self.get_response(user_input)
+            print(" ")
             print(f"Ruthay: {response}")
 
 if __name__ == "__main__":
     chatbot = Chatbot()
-    chatbot.run_server()
+    env = os.getenv("ENV", "dev")
+    if env == "dev":
+        asyncio.run(chatbot.run())
+    else:
+        chatbot.run_server()
