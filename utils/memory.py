@@ -51,10 +51,10 @@ class Memory:
             session.close()
 
 
-    def get_messages(self):
+    def get_messages(self, limit=20):
         session = self.Session()
         try:
-            messages = session.query(Message).all()  # Retrieve all messages
+            messages = session.query(Message).order_by(Message.id.desc()).limit(limit).all()  # Retrieve last 20 messages
             return [(msg.role, msg.content) for msg in messages]
         finally:
             session.close()
@@ -97,8 +97,6 @@ class Memory:
         finally:
             session.close()
         
-
-
 
 if __name__ == "__main__":
     m = Memory()

@@ -17,6 +17,7 @@ import uvicorn
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
 import asyncio
+from langchain_ollama.llms import OllamaLLM
 
 load_dotenv()
 
@@ -27,9 +28,14 @@ sys.path.insert(0, os.path.join(current_directory, "utils"))
 sys.path.insert(0, os.path.join(current_directory, "tools"))
 
 from voice import voice_converter
+from speak import speak
+from memory import Memory
+
 
 class RequestBody(BaseModel):
     user_input: str
+
+
 class Chatbot:
     """A simple chatbot that uses generative AI to assist users with questions and tasks."""
 
@@ -39,49 +45,41 @@ class Chatbot:
         if not self.groq_api_key:
             raise ValueError("GROQ_API_KEY environment variable is not set.")
         
-        self.model = "llama3-8b-8192"
-        self.llm = ChatGroq(
-            groq_api_key=self.groq_api_key,
-            model_name=self.model, 
-            temperature=0.7,
-            max_retries=2
-        )
-
-        self.host = os.getenv("HOST", "0.0.0.0")
-        self.port = os.getenv("PORT", 5000)
+        self.model = "llama3.2:3b"
+        self.llm = OllamaLLM(base_url="http://localhost:11434", model=self.model)
     
-        self.system_prompt = self.create_system_prompt()
         self.prompt = self.create_chat_prompt()
         self.output_parser = StrOutputParser()
         self.conversation = self.prompt | self.llm | self.output_parser
 
         self.tl_en = "Helsinki-NLP/opus-mt-tl-en"
         self.en_tl = "Helsinki-NLP/opus-mt-en-tl"
-
-        
+        self.memory = Memory()
         self.chat_history = self.load_chat_history()
 
-    def create_system_prompt(self):
+    @property
+    def system_prompt(self):
         """Creates the system prompt for the chatbot."""
-        return f"""
-            Your name is Rootay, a friendly and helpful assistant designed to provide concise, clear,
-            and direct answers to user inquiries. 
-            You can remember context and utilize chat history to deliver relevant and coherent responses.
-            Maintain a formal tone while ensuring that your answers are straightforward and to the point,
-            focusing on delivering accurate information without unnecessary embellishment.
-        """
+        return """
+            You’re a friendly, helpful assistant, skilled at simplifying things so users never feel lost. Provide clear, concise answers and guide users through instructions directly. Always summarize and answer in one line without extra characters.
+            """
 
     def create_chat_prompt(self):
         """Constructs the chat prompt template using the system prompt and placeholders."""
 
         template = """
+            Hey there! Let's pick up from where we left off:
+
+            Previous conversation:
+            {chat_history}
+
+            This is my question:
             {human_input}
             """
 
         return ChatPromptTemplate.from_messages(
             [
                 SystemMessage(content=self.system_prompt),
-                MessagesPlaceholder(variable_name="chat_history", optional=True),
                 HumanMessagePromptTemplate.from_template(template),
             ]
         )
@@ -89,25 +87,25 @@ class Chatbot:
     def load_chat_history(self):
         """Loads the chat history from memory."""
 
-        messages = []
-        return [HumanMessage(content=msg[1]) if msg[0] == 'human' else AIMessage(content=msg[1]) for msg in messages]
+        messages = self.memory.get_messages()
+        return [AIMessage(content=msg[1]) for msg in messages]
 
     async def get_response(self, user_input):
         """Generates a response to the user's input using the conversation chain."""
-        print(self.chat_history)
         result = await asyncio.to_thread(self.conversation.invoke, {
                 "human_input": user_input,
-                "chat_history": self.chat_history[-10:],  # Use the last 10 messages
+                "chat_history": self.chat_history[-20:],  # Use the last 10 messages
             })
         env = os.getenv("ENV", "dev")
-        return voice_converter(result) if env != "dev" else result
+        return speak(result) if env.lower() == "dev" else voice_converter(result) 
 
 
-    def user_query(self, user_question):
+    async def user_query(self, user_question):
         """Trigger to start conversation."""
-        response = self.get_response(user_question)
+        response = await self.get_response(user_question)
         self.chat_history.append(HumanMessage(content=user_question))
         self.chat_history.append(AIMessage(content=response))
+        self.memory.add_message(user_question, response)
         return response
 
     
@@ -132,8 +130,9 @@ class Chatbot:
             """Handles chat requests and generates responses."""
             user_input = data.user_input
             response = await self.get_response(user_input)
-            # self.chat_history.append(HumanMessage(content=user_input))
-            # self.chat_history.append(AIMessage(content=response))
+            self.chat_history.append(HumanMessage(content=user_input))
+            self.chat_history.append(AIMessage(content=response))
+            self.memory.add_message(user_input, response)
             return {"response": response, "chat_history": self.chat_history}
 
         # Route to serve the voice file (voice.mp3)
@@ -142,12 +141,13 @@ class Chatbot:
             """Returns the voice file (voice.mp3)."""
             file_path = os.getcwd()
             file_path = f"{file_path}/api/output/voice.mp3"  # Path to your voice.mp3 file in the static folder
-            print(file_path)
             if os.path.exists(file_path):
                 return FileResponse(file_path)
             return {"error": "Voice file not found."}
 
-        uvicorn.run(app, host='0.0.0.0', port=5000)
+        host = os.getenv("SERVER_URL", "0.0.0.0")
+        port = os.getenv("SERVER_PORT", 5000)
+        uvicorn.run(app, host=host, port=port)
 
     async def run(self):
         """Runs the chatbot in a console interface."""
@@ -156,14 +156,14 @@ class Chatbot:
             user_input = input("Ask me anything: ")
             if user_input in ['exit']:
                 sys.exit(1)
-            response = await self.get_response(user_input)
+            response = await self.user_query(user_input)
             print(" ")
             print(f"Ruthay: {response}")
 
 if __name__ == "__main__":
     chatbot = Chatbot()
     env = os.getenv("ENV", "dev")
-    if env == "dev":
+    if env.lower() == "dev":
         asyncio.run(chatbot.run())
     else:
         chatbot.run_server()
