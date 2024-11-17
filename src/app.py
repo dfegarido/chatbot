@@ -77,7 +77,6 @@ class Chatbot:
         """Creates the system prompt for the chatbot."""
         return """
             You’re a friendly, helpful assistant, skilled at simplifying things so users never feel lost. Provide clear, concise answers and guide users through instructions directly.
-            Always summarize and answer in one line without extra characters.
             """
 
     def create_chat_prompt(self):
