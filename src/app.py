@@ -13,6 +13,8 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.manager import CallbackManager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langserve import add_routes
 import uvicorn
@@ -145,6 +147,20 @@ class Chatbot:
             allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
             allow_headers=["*"],  # Allows all headers
         )
+
+        # Serve static files (e.g., index.html, JavaScript, CSS)
+        app.mount("/static", StaticFiles(directory="static"), name="static")
+
+        # Serve the index.html file on the root path
+        @app.get("/", response_class=HTMLResponse)
+        async def get_index():
+            """Serves the index.html file."""
+            file_path = os.path.join(os.getcwd(), "static", "index.html")
+            if os.path.exists(file_path):
+                return FileResponse(file_path)
+            return {"error": "index.html not found."}
+
+
         @app.post('/chat')
         def chat_route_handler(data: RequestBody):
             """Handles chat requests and generates responses."""
