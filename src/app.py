@@ -9,6 +9,8 @@ from langchain_core.prompts import (
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.callbacks.manager import CallbackManager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +33,8 @@ from voice import voice_converter
 from speak import speak
 from memory import Memory
 
+callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
+
 
 class RequestBody(BaseModel):
     user_input: str
@@ -45,23 +49,33 @@ class Chatbot:
         if not self.groq_api_key:
             raise ValueError("GROQ_API_KEY environment variable is not set.")
         
-        self.model = "llama3.2:3b"
-        self.llm = OllamaLLM(base_url="http://localhost:11434", model=self.model)
-    
+        self.model = "llama-3.1-8b-instant"
+        if os.getenv("ENV", "DEV").lower() == 'dev':
+            self.llm = OllamaLLM(base_url="http://localhost:11434", model="llama3.2:3b")
+        else:
+            self.llm = ChatGroq(
+                groq_api_key=self.groq_api_key,
+                model_name=self.model, 
+                temperature=0.7,
+                max_retries=2
+            )
+        
+        self.memory = Memory()
+        self.chat_history = self.load_chat_history()
         self.prompt = self.create_chat_prompt()
         self.output_parser = StrOutputParser()
         self.conversation = self.prompt | self.llm | self.output_parser
 
         self.tl_en = "Helsinki-NLP/opus-mt-tl-en"
         self.en_tl = "Helsinki-NLP/opus-mt-en-tl"
-        self.memory = Memory()
-        self.chat_history = self.load_chat_history()
+        
 
     @property
     def system_prompt(self):
         """Creates the system prompt for the chatbot."""
         return """
-            You’re a friendly, helpful assistant, skilled at simplifying things so users never feel lost. Provide clear, concise answers and guide users through instructions directly. Always summarize and answer in one line without extra characters.
+            You’re a friendly, helpful assistant, skilled at simplifying things so users never feel lost. Provide clear, concise answers and guide users through instructions directly.
+            Always summarize and answer in one line without extra characters.
             """
 
     def create_chat_prompt(self):
@@ -80,6 +94,10 @@ class Chatbot:
         return ChatPromptTemplate.from_messages(
             [
                 SystemMessage(content=self.system_prompt),
+                MessagesPlaceholder(
+                    variable_name="chat_history",
+                    optional=True
+                ),
                 HumanMessagePromptTemplate.from_template(template),
             ]
         )
@@ -90,20 +108,22 @@ class Chatbot:
         messages = self.memory.get_messages()
         return [AIMessage(content=msg[1]) for msg in messages]
 
-    async def get_response(self, user_input):
+    def get_response(self, user_input):
         """Generates a response to the user's input using the conversation chain."""
-        result = await asyncio.to_thread(self.conversation.invoke, {
+
+        result = self.conversation.invoke({
                 "human_input": user_input,
-                "chat_history": self.chat_history[-20:],  # Use the last 10 messages
-            })
+                "chat_history": self.chat_history,  # Use the last 10 messages
+        })
+
         env = os.getenv("ENV", "dev")
         return speak(result) if env.lower() == "dev" else voice_converter(result) 
 
 
-    async def user_query(self, user_question):
+    def user_query(self, user_question):
         """Trigger to start conversation."""
-        response = await self.get_response(user_question)
-        self.chat_history.append(HumanMessage(content=user_question))
+        response = self.get_response(user_question)
+
         self.chat_history.append(AIMessage(content=response))
         self.memory.add_message(user_question, response)
         return response
@@ -126,10 +146,10 @@ class Chatbot:
             allow_headers=["*"],  # Allows all headers
         )
         @app.post('/chat')
-        async def chat_route_handler(data: RequestBody):
+        def chat_route_handler(data: RequestBody):
             """Handles chat requests and generates responses."""
             user_input = data.user_input
-            response = await self.get_response(user_input)
+            response = self.get_response(user_input)
             self.chat_history.append(HumanMessage(content=user_input))
             self.chat_history.append(AIMessage(content=response))
             self.memory.add_message(user_input, response)
@@ -146,17 +166,17 @@ class Chatbot:
             return {"error": "Voice file not found."}
 
         host = os.getenv("SERVER_URL", "0.0.0.0")
-        port = os.getenv("SERVER_PORT", 5000)
+        port = int(os.getenv("SERVER_PORT", 5000))
         uvicorn.run(app, host=host, port=port)
 
-    async def run(self):
+    def run(self):
         """Runs the chatbot in a console interface."""
         while True:
             print(" ")
             user_input = input("Ask me anything: ")
             if user_input in ['exit']:
                 sys.exit(1)
-            response = await self.user_query(user_input)
+            response = self.user_query(user_input)
             print(" ")
             print(f"Ruthay: {response}")
 
@@ -164,6 +184,6 @@ if __name__ == "__main__":
     chatbot = Chatbot()
     env = os.getenv("ENV", "dev")
     if env.lower() == "dev":
-        asyncio.run(chatbot.run())
+        chatbot.run()
     else:
         chatbot.run_server()
