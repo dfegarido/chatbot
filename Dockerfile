@@ -1,19 +1,17 @@
-# Use the official Ollama image as a base
-FROM ollama/ollama:latest
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim
 
-# Ensure the .ollama directory is copied from the build context to the container
-RUN mkdir -p /root/.ollama
+# Install eSpeak
+RUN apt-get update && apt-get install -y espeak && rm -rf /var/lib/apt/lists/*
 
-# Copy any additional files you may need (like your app files)
-COPY . /app
-
-# Set the working directory to /app
+# Set the working directory
 WORKDIR /app
 
-# Expose the port that Ollama will serve on (if applicable)
-EXPOSE 11434
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# Run 'ollama serve' in the background and keep the container running
-ENTRYPOINT ["sh", "-c", "ollama serve"]
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD [ "bin", "bash" ]
+# Run the app
+CMD ["python", "src/app.py"]
