@@ -1,142 +1,48 @@
-from langchain_core.documents import Document
-from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-from pinecone import Pinecone, ServerlessSpec
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_pinecone import PineconeEmbeddings, PineconeVectorStore
-import requests
-import os
-import time
-import uuid
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_ollama import OllamaEmbeddings
+from langchain.schema import Document
 
-class PineconeClient:
-    def __init__(self, index_name="quickstart", dimension=768, metric="cosine"):
-        self.api_key = os.getenv("PINECONE_API_KEY")
-        self.pc = Pinecone(api_key=self.api_key)
-        self.index_name = index_name
-        self.dimension = dimension
-        self.metric = metric
-        # self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-        self.embeddings = PineconeEmbeddings(model="multilingual-e5-large")
-        self.index = None
-        self._create_index()
+embeddings = OllamaEmbeddings(
+    model="mxbai-embed-large",
+)
 
-    def _create_index(self):
-        """Create a Pinecone index if it doesn't already exist."""
-        existing_indexes = [index.name for index in self.pc.list_indexes()]
+def similarity_search(documents, query):
+    
+    text_splitter = CharacterTextSplitter(chunk_size=10000, chunk_overlap=0)
+    documents = text_splitter.split_documents(documents)
 
-        if self.index_name not in existing_indexes:
-            self.pc.create_index(
-                name=self.index_name,
-                dimension=self.dimension,
-                metric=self.metric,
-                spec=ServerlessSpec(
-                    cloud="aws",
-                    region="us-east-1"
-                )
-            )
-            # Wait for the index to be ready
-            while not self.pc.describe_index(self.index_name).status['ready']:
-                time.sleep(1)
+    db = FAISS.from_documents(documents, embeddings)
 
-        self.index = self.pc.Index(self.index_name)
+    docs = db.similarity_search(query)
+    return docs[0].page_content
 
-    def get_groq_embedding(self, text):
-        """Get the Groq embedding for a given text."""
-        url = "YOUR_GROQ_EMBEDDING_API_ENDPOINT"  # Replace with your Groq API endpoint
-        headers = {
-            "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}",
-            "Content-Type": "application/json"
-        }
-        data = {"text": text}
-        response = requests.post(url, headers=headers, json=data)
-
-        if response.status_code == 200:
-            return response.json().get("embedding")  # Adjust according to the actual response structure
-        else:
-            raise Exception(f"Error fetching embedding: {response.text}")
-
-    @property
-    def vector_store(self):
-        return PineconeVectorStore(
-            index=self.index,
-            embedding=self.embeddings
-        )
-
-    @property
-    def retriever(self, query: str) -> list:
-        return self.vector_store.as_retriever()
-
-    def add_data(self, data):
-        """Embed the input data and upsert it to the index."""
-
-        try:
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=10000,
-                chunk_overlap=200
-            )
-
-            for conversation in data:
-                chunks = text_splitter.split_text(conversation.context)  # Assuming 'context' is the text to embed
-                vectors = []
-                for i, chunk in enumerate(chunks):
-                    vector = self.embeddings.embed_documents([chunk])[0] 
-                    vectors.append({
-                        "id": f"{conversation.role}-{uuid.uuid4()}",  # Unique ID for each entry
-                        "values": vector,
-                        "metadata": {'text': chunk}
-                    })
-                print(f"Inserting {chunk}")
-                self.index.upsert(vectors=vectors, namespace="ns1")
-            print(f"Successfully add data : total {len(data)}")
-        except Exception as e:
-            print(f"Error adding data : {str(e)}")
-
-
-    def query_index(self, query, top_k=1):
-        """Query the index and return the top_k results."""
-
-        embedding = self.embeddings.embed_documents([query.query])[0]  # Get embedding for the query
-
-        results = self.index.query(
-            namespace="ns1",
-            vector=embedding,
-            top_k=top_k,
-            include_values=False,
-            include_metadata=True
-        )
-
-        return results
-
-    def delete_index(self):
-        """Delete the Pinecone index."""
-        self.pc.delete_index(self.index_name)
-
-        print(f"Index '{self.index_name}' deleted.")
-
-    def describe_index_stats(self):
-        """Get the index statistics."""
-        return self.index.describe_index_stats()
-
-# Example usage
 if __name__ == "__main__":
-    pinecone_client = PineconeClient(index_name='chat-history')
-    # pinecone_client.delete_index()
-    # Add some data
-    # Sample data entries
-    data_samples = [
-        {
-            "role": "user",
-            "context": "What are the latest advancements in artificial intelligence?"
-        }
-    ]
+    text = """
+    
+        The Adventure of the Lost Key
+        Once upon a time in a small village nestled between towering mountains, there was a young girl named Lily. Lily was curious and adventurous, always eager to explore the world beyond her home. One day, while rummaging through the attic of her family's old house, she stumbled upon an antique chest hidden beneath a dusty sheet. The chest was locked, but there was something strange about it—it didn’t have a keyhole.
 
-    pinecone_client.add_data(data_samples)
+        Puzzled, Lily examined the chest closely. She noticed a faint engraving on the side: “To open the chest, find the key of the forgotten.” Intrigued, she decided that she would discover the meaning of this cryptic message. Her grandmother, who had lived in the village her whole life, often told stories of ancient treasures and forgotten secrets buried deep in the mountains. Lily wondered if the key might be hidden somewhere in the village.
 
-    # Describe index stats
-    details = pinecone_client.describe_index_stats()
-    print(f"Total vectors count: {details['total_vector_count']}")
+        Her first stop was the village library, a small stone building with shelves stacked high with old books and dusty scrolls. The librarian, Mr. Thompson, was an elderly man with a long white beard who loved to share stories with anyone who would listen. When Lily asked about the "key of the forgotten," Mr. Thompson raised an eyebrow but didn’t say a word. He simply handed her a book titled The Lost Secrets of the Mountain Folk.
 
-    # Query the index
-    query = "what is supervise learning"
-    results = pinecone_client.query_index(query)
-    print(results)
+        Lily spent hours in the library, flipping through the book. In it, she discovered that the "key of the forgotten" was not a physical object but a symbol of knowledge, passed down through generations. According to the book, only those who truly understood the past could uncover its secrets.
+
+        Determined, Lily decided to travel to the old ruins at the foot of the mountains, where the village's ancestors had once lived. As she journeyed through the dense forest, she encountered a wise old fox who seemed to be watching her from a distance. When she stopped to rest, the fox approached and spoke.
+
+        "You seek the key," said the fox, "but the key is not a thing—it is a truth. Only when you know the history of those who came before you will the chest reveal its contents."
+
+        Lily felt a deep sense of understanding as the fox's words echoed in her mind. She realized that the chest was a metaphor, a challenge to discover not just the physical key but the wisdom hidden in the village’s past.
+
+        After spending days searching the ruins and speaking to the village elders, Lily learned the lost stories of her ancestors—their struggles, their triumphs, and the lessons they had learned. Armed with this knowledge, she returned to the chest, now understanding its true meaning. As she placed her hand on the chest, it slowly opened, revealing not gold or jewels, but an ancient scroll filled with the wisdom of generations long past.
+
+        Lily smiled, for she had unlocked the true treasure—the key to understanding the world and her place in it.
+
+
+    """
+    
+
+    x = similarity_search(text, "What is Lily’s main goal in the story")  # Output: "Llamas
+    print(x)  # Output: "Llamas are members of the camelid family meaning

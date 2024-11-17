@@ -9,8 +9,6 @@ from langchain_core.prompts import (
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.callbacks.manager import CallbackManager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
@@ -34,8 +32,8 @@ sys.path.insert(0, os.path.join(current_directory, "tools"))
 from voice import voice_converter
 from speak import speak
 from memory import Memory
+from news import query_news, news_update, get_all_news
 
-callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
 
 class RequestBody(BaseModel):
@@ -68,6 +66,8 @@ class Chatbot:
         self.output_parser = StrOutputParser()
         self.conversation = self.prompt | self.llm | self.output_parser
 
+        self.news_query = None
+
         self.tl_en = "Helsinki-NLP/opus-mt-tl-en"
         self.en_tl = "Helsinki-NLP/opus-mt-en-tl"
         
@@ -76,21 +76,21 @@ class Chatbot:
     def system_prompt(self):
         """Creates the system prompt for the chatbot."""
         return """
-            You’re a friendly, helpful assistant, skilled at simplifying things so users never feel lost. Provide clear, concise answers and guide users through instructions directly.
+            Hey there! I'm here to help you out. 
+            My goal is to make things super simple so you never feel lost. 
+            I'll give you clear and easy-to-understand answers, and I'll guide you through any steps directly. 
+            If you ever have more questions or need me to explain something differently, just let me know!
+
+            Let’s keep the conversation going—what would you like help with next? 😊
+            Using this data : {tools_data}
+
+            Respond to this prompt:
+            {human_input}
             """
 
     def create_chat_prompt(self):
         """Constructs the chat prompt template using the system prompt and placeholders."""
 
-        template = """
-            Hey there! Let's pick up from where we left off:
-
-            Previous conversation:
-            {chat_history}
-
-            This is my question:
-            {human_input}
-            """
 
         return ChatPromptTemplate.from_messages(
             [
@@ -99,7 +99,11 @@ class Chatbot:
                     variable_name="chat_history",
                     optional=True
                 ),
-                HumanMessagePromptTemplate.from_template(template),
+                MessagesPlaceholder(
+                    variable_name="tools_data",
+                    optional=True
+                ),
+                HumanMessagePromptTemplate.from_template("{human_input}"),
             ]
         )
 
@@ -109,12 +113,125 @@ class Chatbot:
         messages = self.memory.get_messages()
         return [AIMessage(content=msg[1]) for msg in messages]
 
+    def select_related_tool(self, query):
+        template = f"""
+            Base on this query '{query['user_input']}' select the most relevant tool.
+            No other message just direct answer.
+
+            answer only from this lists:
+            [{[f"{tool['name']} : {tool['definition']}," for tool in self.list_of_tools]}]
+        """
+        prompt = ChatPromptTemplate.from_messages([SystemMessage(content=template)])
+
+        generate = prompt | self.llm | self.output_parser
+        return generate.invoke(query)
+
+    @property
+    def list_of_tools(self):
+        return [
+                    {
+                        "name": "news_tool",
+                        "definition": "Provides data related to current news, including articles, headlines, and updates across various topics such as politics, technology, sports, weather, etc."
+                    },
+                    {
+                        "name": "date_tool",
+                        "definition": "Provides data related to dates, including specific calendar dates, days of the week, holidays, and other time-related information."
+                    },
+                    {
+                        "name": "time_tool",
+                        "definition": "Provides data related to the current time, time zones, and conversions between different time zones or specific times in the past and future."
+                    },
+                    {
+                        "name": "location_tool",
+                        "definition": "Provides data related to geographical locations, including places, coordinates (latitude/longitude), landmarks, and regions."
+                    },
+                    {
+                        "name": "update_news_tool",
+                        "definition": "To trigger the function to get the latest news from website and store it to database"
+                    },
+                    {
+                        "name": "other_tool",
+                        "definition": "Handles queries that don't match any of the categories above, providing relevant information or responses based on other tools or general knowledge."
+                    },
+
+                ]
+
+
+    def check_relevance(self, query, context):
+        """Checks if the query is relevant to the current context."""
+        # Define the template with placeholders for query and context
+        template = """
+        Check if the query "{query}" is relevant to the context.
+        Respond only with "yes" or "no".
+        context: {context}
+        """
+        
+        # Properly format the template with actual query and context values
+        formatted_template = template.format(query=query, context=context)
+        
+        # Create a prompt using the formatted template
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessage(content=formatted_template)
+        ])
+        
+        # Generate a response by invoking the prompt with the LLM and output parser
+        generate = prompt | self.llm | self.output_parser
+        return generate.invoke({})
+
+    def generate_question(self, query):
+        """Generates a question based on the query and context."""
+
+        # Define the template with placeholders for query and context
+        template = """
+            Generate one question based on the query 
+            Make it easy to understand and short.
+            Just one question.
+            "{query}".
+            
+        """
+        
+        # Properly format the template with actual query and context values
+        formatted_template = template.format(query=query)
+        
+        # Create a prompt using the formatted template
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessage(content=formatted_template)
+        ])
+        
+        # Generate a response by invoking the prompt with the LLM and output parser
+        generate = prompt | self.llm | self.output_parser
+        return generate.invoke({})
+
+
+
     def get_response(self, user_input):
         """Generates a response to the user's input using the conversation chain."""
 
+        while True:
+            tool_use = self.select_related_tool({"user_input": user_input})
+            is_relevant = self.check_relevance(user_input, tool_use)
+            print(f'tool use {tool_use}')
+            print(f'is relevant {is_relevant}')
+            if "yes" in is_relevant.lower() or "other_tool" in tool_use:
+                break
+            user_input = self.generate_question(user_input)
+            print(f'New question {user_input}')
+
+
+        tool_content = ""
+        if "news_tool" in tool_use:
+            tool_content = query_news(user_input)
+        if "update_news_tool" in tool_use:
+            news_update()
+            tool_content = f"News update triggered successfully. {get_all_news()}"
+
         result = self.conversation.invoke({
                 "human_input": user_input,
-                "chat_history": self.chat_history,  # Use the last 10 messages
+                "chat_history": [],  # Use the last 10 messages
+                "tools_data": [{
+                    "role":"system",
+                    "content": tool_content
+                }],
         })
 
         env = os.getenv("ENV", "dev")

@@ -3,54 +3,64 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.tools import tool, StructuredTool
 from bs4 import BeautifulSoup
 from requests_html import HTMLSession
-import pyppdf.patch_pyppeteer
+from langchain.schema import Document
+
 from uuid import uuid4
 import sys, os
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_pinecone import PineconeVectorStore
+
+
 from langchain.agents import Tool
 from pydantic import BaseModel, Field
 from typing import List
+
+from sqlalchemy import create_engine, select, Column, String, Integer, text
+from sqlalchemy.orm import sessionmaker, declarative_base
+from langchain_community.chat_message_histories import SQLChatMessageHistory
+from langchain_core.tools import tool
+import os
 
 # Add src to Python Path to avoid errors in module import
 sys.path.insert(0, os.path.abspath("./utils/"))
 sys.path.insert(0, os.path.abspath("./tools/"))
 
-from vectore_store import PineconeClient
+from vectore_store import similarity_search
 
-# Initialize Pinecone client
-pinecone_client = PineconeClient(index_name='news', dimension=1024)
+# Sqlite path
+sqlite_path = 'news.db'
 
-# Define Pydantic models
-class NewsQuery(BaseModel):
-    '''Model for the news query input'''
-    query: str = Field(..., description="Search query for news articles.")
+Base = declarative_base()
 
-class NewsArticle(BaseModel):
-    '''Model for a news article'''
-    role: str
-    context: str
+# Define a Message model that represents your chat messages
+class Message(Base):
+    __tablename__ = 'news'
+    # {'role': 'human', 'content': "My name is ***"}
+    id = Column(Integer, primary_key=True)
+    role = Column(String)
+    page_content = Column(String)
 
-class NewsResponse(BaseModel):
-    '''Model for the response containing news articles'''
-    articles: List[NewsArticle]
+# Create an SQLAlchemy engine
+engine = create_engine(f"sqlite:///{sqlite_path}")
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)
+session = Session()
 
-def get_news(query: NewsQuery) -> str:
-    results = pinecone_client.query_index(query=query)
-    return ''.join(matches['metadata']['text'] for matches in results['matches'])
 
-def update_db(data: List[NewsArticle]):
-    pinecone_client.add_data(data)
-    # Describe index stats
-    details = pinecone_client.describe_index_stats()
-    print(f"Total vectors count: {details['total_vector_count']}")
 
-def news_update() -> NewsResponse:
+def update_db(data):
+    session.add(data)
+    session.commit()
+    session.close()
+
+
+def get_all_news():
+    messages = session.query(Message).order_by(Message.id.desc()).all()  # Retrieve last 20 messages
+    return [Document(page_content=msg.page_content) for msg in messages]
+
+
+def news_update():
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
-    pinecone_client.delete_index()
-    pinecone_client._create_index()
 
     gma_network = "https://www.gmanetwork.com/news"
     news_url = f"{gma_network}/archives/just_in/"
@@ -66,40 +76,39 @@ def news_update() -> NewsResponse:
     if not contents:
         return NewsResponse(articles=[])
 
-    articles = []
-
     for content in contents:
         href = content.get('href')
         loader = WebBaseLoader(href)
-        [docs] = loader.load()
+        scrape = loader.scrape()
+        contents = scrape.find_all('div', attrs={'class': 'story_main'})
+        if len(contents) > 0:
+            text = contents[0]
+        else:
+            continue
 
-        docs_data = NewsArticle(role="system", context=docs.page_content)
-        articles.append(docs_data)
+        text_result = text.get_text()
+        article = Message(role='system', page_content=text_result)
+        update_db(article)
 
-    update_db(articles)
 
-    return NewsResponse(articles=articles)
+def clear_messages():
+    try:
+        session.query(Message).delete()  # Clear the messages
+        session.commit()
+    finally:
+        session.close()
 
-@tool
-def news_tool(query: str) -> str:
-    """
-        Fetch the latest news articles based on a search query.
+def query_news(query):
 
-        This tool retrieves the most recent articles from GMA News related to a provided 
-        search query. Simply input your query (e.g., “latest tech news”), and the tool 
-        will return relevant articles.
+    articles = get_all_news()
+    return similarity_search(articles, query)
 
-        Args:
-            query (str): A string representing the search term for news articles.
 
-        Returns:
-            Tool: A tool containing the latest news articles related to the query.
-    """
-
-    return 'this is a testing setup'
 
 if __name__ == '__main__':
-    query_input = "voltes v"
-    res = get_news(NewsQuery(query=query_input))
+    print("Updating news...")
+    clear_messages()
+    news_update()
 
-    print(res)
+    print("News updated")
+
