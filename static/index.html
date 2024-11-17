@@ -31,7 +31,7 @@
     <button id="start-btn">Start Speech Recognition</button>
     <div id="result"></div>
     <audio id="audio-player">
-        <source id="audio-source" src="http://0.0.0.0:8000/voice" type="audio/mpeg">
+        <source id="audio-source" src="http://192.168.1.216:8000/voice" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
     <div id="result-output"></div>
@@ -42,6 +42,7 @@
         const resultDiv = document.getElementById('result');
         const audioPlayer = document.getElementById('audio-player');
         const resultOutputDiv = document.getElementById('result-output');
+        const api_ip = "http://192.168.1.216:8000"
         
         if (!('webkitSpeechRecognition' in window)) {
             resultDiv.innerHTML = 'Speech Recognition is not supported in this browser.';
@@ -90,7 +91,7 @@
                 if (audioPlayer && is_done) {
                     const audioSource = document.getElementById('audio-source');
                     const timestamp = new Date().getTime(); // Generate a unique timestamp
-                    audioSource.src = "http://0.0.0.0:8000/voice?query=" + timestamp; // Add timestamp to the query string
+                    audioSource.src = api_ip + "/voice?query=" + timestamp; // Add timestamp to the query string
 
                     audioPlayer.load(); // Reload the audio element to reflect the new URL
                 }
@@ -115,7 +116,7 @@
 
         // Send the user input to the server via a POST request
         function sendPostRequest(userInput) {
-            const url = "http://0.0.0.0:8000/chat";
+            const url = api_ip + "/chat";
             const data = { user_input: userInput };
 
             return fetch(url, {
