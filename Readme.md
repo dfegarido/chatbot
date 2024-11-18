@@ -6,7 +6,7 @@
 
 Welcome to our open-source QA chatbot! This project allows you to build and deploy a conversational AI model that can answer questions and provide helpful responses.
 
-![Flow Diagram](flow_diagram.png)
+![Flow Diagram](diagram_flow.png)
 
 ## Getting Started
 -------------------
