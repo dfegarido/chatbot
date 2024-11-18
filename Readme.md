@@ -6,6 +6,8 @@
 
 Welcome to our open-source QA chatbot! This project allows you to build and deploy a conversational AI model that can answer questions and provide helpful responses.
 
+![Flow Diagram](flow_diagram.png)
+
 ## Getting Started
 -------------------
 
@@ -42,12 +44,12 @@ Update the `sample.env` file to `.env` and configure the environment variables a
 ## TODO
 ---------------
 - [x] Setting up Chatbot
-- [ ] Memory on Database
+- [x] Memory on Database
 - [ ] Setting up tools
     - [ ] Weather
     - [ ] LinkedIn
     - [ ] Search Engine (Google/DuckDuck/Etc)
-    - [ ] News
+    - [X] News
     - [ ] DateTime
 - [ ] Web UI
 - [ ] Setting up Conscious
