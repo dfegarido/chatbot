@@ -1,9 +1,12 @@
 import pyttsx3
 import time
+import asyncio
+from gtts import  gTTS
+import os
 
 # Initialize the TTS engine
 engine = pyttsx3.init()
-engine.setProperty('rate', 180)  # Set speech rate
+engine.setProperty('rate', 150)  # Set speech rate
 engine.setProperty('volume', 1)   # Set volume
 
 def speak(text):
@@ -12,18 +15,32 @@ def speak(text):
     engine.runAndWait()
     return text
 
-def stream_output(text):
-    """Simulate streaming output by speaking in chunks."""
-    # Split the text into smaller chunks (e.g., sentences or phrases)
-    chunks = text.split('. ')  # Split by sentence for example
 
-    for chunk in chunks:
-        if chunk:  # Check if chunk is not empty
-            speak(chunk.strip())  # Speak each chunk
-            time.sleep(0.5)  # Optional: pause between chunks for clarity
+def voice_converter(text):
+    """Converts text to speech and saves it as an mp3 file asynchronously."""
+    
+    # Specify the language as Tagalog
+    language = 'en'
+
+    # Correctly pass tld as a keyword argument (not as a positional argument)
+    tts = gTTS(text=text, lang=language, tld='com', slow=False)
+
+    # Save the converted audio to a file (this happens synchronously in the background thread)
+    tts.save("api/output/voice.mp3")
+    return text
+
+def speak_now(text):
+    env = os.getenv("ENV")
+    if env.lower() == "dev":
+        speak(text)
+    else:
+        voice_converter(text)
+    return text
+
+
 
 if __name__ == "__main__":
     message = "Hello, I am your assistant. How can I help you today? Here is some more information about our services."
     
     # Start streaming the audio output
-    stream_output(message)
+    speak_now(message)
