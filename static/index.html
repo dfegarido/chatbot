@@ -31,7 +31,7 @@
     <button id="start-btn">Start Speech Recognition</button>
     <div id="result"></div>
     <audio id="audio-player">
-        <source id="audio-source" src="https://3533-136-158-1-163.ngrok-free.app/voice" type="audio/mpeg">
+        <source id="audio-source" src="https://chatbot-pdix.onrender.com/voice" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
     <div id="result-output"></div>
@@ -42,7 +42,7 @@
         const resultDiv = document.getElementById('result');
         const audioPlayer = document.getElementById('audio-player');
         const resultOutputDiv = document.getElementById('result-output');
-        const api_ip = "https://3533-136-158-1-163.ngrok-free.app"
+        const api_ip = "https://chatbot-pdix.onrender.com"
         
         if (!('webkitSpeechRecognition' in window)) {
             resultDiv.innerHTML = 'Speech Recognition is not supported in this browser.';
