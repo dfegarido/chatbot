@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import requests
 import os
 from flask_cors import CORS  # Import CORS
@@ -15,7 +15,6 @@ external_api_url = os.getenv("SERVER_URL")
 def get_token_name():
     # Get the request body
     incoming_data = request.json
-    # You can adjust this if you need to use the incoming data for the request
     message = incoming_data.get('content')
 
     # Prepare the payload to send to the external API
@@ -23,16 +22,19 @@ def get_token_name():
         "content": message
     }
 
-    # Send the POST request to the external API
-    response = requests.post(f"{external_api_url}/chat", json=payload)
+    # Send the POST request to the external API with stream=True
+    response = requests.post(f"{external_api_url}/chat-stream", json=payload, stream=True)
 
     # Check if the external API request was successful
     if response.status_code == 200:
-        # Parse the JSON response from the external API
-        response_data = response.json()
-        return jsonify({
-            'response': response_data.get('response', 'No response found')
-        }), 200
+        # A generator function to stream content from the external API
+        def generate():
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    yield chunk.decode('utf-8')  # Decode bytes to string and yield the chunk
+        
+        # Return the streamed response to the client
+        return Response(generate(), content_type='text/event-stream'), 200
     else:
         return jsonify({'error': 'Failed to get response from external API'}), 500
 

@@ -31,7 +31,6 @@ documents = loader.load()
 documents = text_splitter.split_documents(documents)
 db = FAISS.from_documents(documents, embedding)
 
-
 # Define the route to handle questions with chat-stream
 @app.route('/chat-stream', methods=['POST'])
 def chat_stream():
@@ -84,7 +83,7 @@ def chat_stream():
 
                             # Extract the message content
                             response_content = chunk_data.get("message", {}).get("content", "")
-                            print(response_content)
+                            
                             if response_content:
                                 yield f"data: {response_content}\n\n"  # Stream content as SSE
 
@@ -103,61 +102,6 @@ def chat_stream():
     # Return a streaming response to the client using SSE
     return Response(generate(), content_type='text/event-stream')
 
-
-# Define the route to handle questions
-@app.route('/chat', methods=['POST'])
-def ask():
-    # Get user input from the POST request
-    data = request.get_json()
-    user_input = data.get("content")
-    
-    if not user_input:
-        return jsonify({"error": "Question is required"}), 400
-
-    # Perform similarity search on the documents
-    docs = db.similarity_search(user_input)
-
-    # Prepare the context message
-    context = docs[0].page_content  # Get the most relevant context
-
-    # Prepare the messages for Ollama (assuming Ollama accepts a chat-style message format)
-    prompt = f"""
-        You are a highly intelligent, helpful, and friendly assistant named Zyphi. 
-        Avoid sounding robotic or overly formal. 
-        Always respond in short and direct to the point.
-        If the question is not related to context, don't include the context.
-        Here's the context: {context}
-    """
-
-    # Prepare the request payload for Ollama API
-    payload = {
-        "model": "llama3.2:3b",
-        "stream": False,
-        "messages": [
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": user_input}
-        ]
-    }
-
-
-    try:
-        # Make the request to Ollama API
-        response = requests.post(f"{OLLAMA_API_URL}/api/chat", json=payload)
-        
-        # Check if the request was successful
-        response.raise_for_status()
-
-        # Get the response content
-        result = response.json()
-        response_content = result.get("message").get("content")
-        
-        return jsonify({"response": response_content})
-
-    except requests.exceptions.RequestException as e:
-        # Handle any errors (e.g., network issues, invalid responses)
-        return jsonify({"error": str(e)}), 500
-
 # Run the Flask app
 if __name__ == "__main__":
-    port = os.getenv("PORT") or 3000
-    app.run(debug=True, port=port)
+    app.run(debug=True, port=4000)
