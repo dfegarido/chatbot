@@ -33,4 +33,4 @@ def get_token_name():
         return jsonify({'error': 'Failed to get response from external API'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=10000)
+    app.run(debug=True, host=0.0.0.0, port=10000)
