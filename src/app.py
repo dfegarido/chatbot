@@ -1,72 +1,36 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import the CORS module
-from langchain_groq import ChatGroq
-from dotenv import load_dotenv
-from langchain_community.document_loaders.text import TextLoader
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_text_splitters import CharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+import requests
 import os
-# Initialize Flask app
+
 app = Flask(__name__)
 
-# Enable CORS for all routes and origins (adjust as necessary)
-CORS(app)
+# Define the URL of the external API
+external_api_url = os.getenv("SERVER_URL")
 
-# Load environment variables
-load_dotenv()
-
-# Setup Groq model and other components
-llm = ChatGroq(
-    model="mixtral-8x7b-32768",
-    temperature=0.6,
-    max_retries=2,
-)
-
-embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-
-text_splitter = CharacterTextSplitter(chunk_size=10000, chunk_overlap=0)
-
-# Load and process documents
-loader = TextLoader("data/whitepaper.txt")
-documents = loader.load()
-documents = text_splitter.split_documents(documents)
-db = FAISS.from_documents(documents, embedding)
-
-# Define the route to handle questions
 @app.route('/chat', methods=['POST'])
-def ask():
-    # Get user input from the POST request
-    data = request.get_json()
-    user_input = data.get("content")
-    
-    if not user_input:
-        return jsonify({"error": "Question is required"}), 400
+def get_token_name():
+    # Get the request body
+    incoming_data = request.json
+    # You can adjust this if you need to use the incoming data for the request
+    message = incoming_data.get('content')
 
-    # Perform similarity search on the documents
-    docs = db.similarity_search(user_input)
-    
-    # Prepare messages for the Groq model
-    messages = [
-        ("system", f"""
-            You are a highly intelligent, helpful, and friendly assistant named Nikka. 
-            Avoid sounding robotic or overly formal. 
-            Always respond in short and direct to the point.
-            If the question is not related to context, dont include the context.
-            Here's the context: {docs[0].page_content}
-        """),
-        ("human", user_input),
-    ]
+    # Prepare the payload to send to the external API
+    payload = {
+        "content": message
+    }
 
+    # Send the POST request to the external API
+    response = requests.post(f"{external_api_url}/chat", json=payload)
 
-    
-    # Invoke the Groq model with the messages
-    res = llm.invoke(messages)
+    # Check if the external API request was successful
+    if response.status_code == 200:
+        # Parse the JSON response from the external API
+        response_data = response.json()
+        return jsonify({
+            'response': response_data.get('response', 'No response found')
+        }), 200
+    else:
+        return jsonify({'error': 'Failed to get response from external API'}), 500
 
-    # Return the response as JSON
-    return jsonify({"response": res.content})
-
-# Run the Flask app
-if __name__ == "__main__":
-    port = os.getenv("PORT") or 10000
-    app.run(debug=True, port=port)
+if __name__ == '__main__':
+    app.run(debug=True, port=10000)
