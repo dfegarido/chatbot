@@ -6,7 +6,7 @@ from langchain_community.document_loaders.text import TextLoader
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-
+import os
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -68,4 +68,5 @@ def ask():
 
 # Run the Flask app
 if __name__ == "__main__":
-    app.run(debug=True, port=10000)
+    port = os.getenv("PORT") or 10000
+    app.run(debug=True, port=port)
