@@ -3,9 +3,7 @@ from flask_cors import CORS  # Import the CORS module
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 from langchain_community.document_loaders.text import TextLoader
-from langchain_community.embeddings.sentence_transformer import (
-    SentenceTransformerEmbeddings,
-)
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 
@@ -25,7 +23,8 @@ llm = ChatGroq(
     max_retries=2,
 )
 
-embedding = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
 text_splitter = CharacterTextSplitter(chunk_size=10000, chunk_overlap=0)
 
 # Load and process documents
@@ -51,14 +50,14 @@ def ask():
     messages = [
         ("system", f"""
             You are a highly intelligent, helpful, and friendly assistant named Nikka. 
-            Keep the tone friendly and warm. 
             Avoid sounding robotic or overly formal. 
-            When responding, aim to keep the conversation flowing and feel natural.
             Always respond in short and direct to the point.
+            If the question is not related to context, dont include the context.
             Here's the context: {docs[0].page_content}
         """),
         ("human", user_input),
     ]
+
 
     
     # Invoke the Groq model with the messages
