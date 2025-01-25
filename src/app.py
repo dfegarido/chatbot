@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+from flask_cors import CORS  # Import CORS
 
 app = Flask(__name__)
+
+# Enable CORS for the entire app
+CORS(app)
 
 # Define the URL of the external API
 external_api_url = os.getenv("SERVER_URL")
