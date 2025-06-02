@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chat Assistant</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button class="new-chat-btn" id="new-chat-btn">
+          <i class="fas fa-plus"></i>
+          New Chat
+        </button>
+        <button class="toggle-sidebar" id="toggle-sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+      
+      <div class="chat-sessions" id="chat-sessions">
+        <!-- Chat sessions will be populated here -->
+      </div>
+      
+      <div class="sidebar-footer">
+        <button class="settings-btn" id="settings-btn">
+          <i class="fas fa-cog"></i>
+          Settings
+        </button>
+        <button class="theme-toggle" id="theme-toggle">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="main-content">
+      <header class="chat-header">
+        <div class="header-left">
+          <button class="mobile-sidebar-toggle" id="mobile-sidebar-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 class="chat-title" id="chat-title">AI Assistant</h1>
+        </div>
+        
+        <div class="header-controls">
+          <select class="model-selector" id="model-selector">
+            <option value="llama3.2:latest">Llama 3.2</option>
+            <option value="deepseek-coder:1.3b">DeepSeek Coder</option>
+            <option value="deepseek-r1:8b">DeepSeek R1</option>
+            <option value="deepseek-coder-v2:latest">DeepSeek Coder V2</option>
+          </select>
+          
+          <button class="clear-chat" id="clear-chat">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="chat-container">
+        <div class="chat-history" id="chat-history">
+          <div class="welcome-message">
+            <div class="welcome-icon">
+              <i class="fas fa-robot"></i>
+            </div>
+            <h2>Welcome to AI Chat Assistant</h2>
+            <p>Start a conversation with your local AI model. Ask questions, get help with code, or just chat!</p>
+          </div>
+        </div>
+        
+        <form class="chat-input-container" id="chat-form" autocomplete="off">
+          <div class="chat-input-wrapper">
+            <textarea 
+              id="chat-message" 
+              placeholder="Type your message here..." 
+              rows="1"
+              autocomplete="off"
+            ></textarea>
+            <div class="input-actions">
+              <button type="button" class="emoji-btn" id="emoji-btn" title="Add emoji">
+                <i class="fas fa-smile"></i>
+              </button>
+              <button type="button" class="attach-btn" id="attach-btn" title="Attach file">
+                <i class="fas fa-paperclip"></i>
+              </button>
+              <button type="submit" class="send-btn" id="send-btn" title="Send message">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+        
+        <!-- Emoji Picker -->
+        <div class="emoji-picker" id="emoji-picker">
+          <div class="emoji-picker-header">
+            <h4>Choose an emoji</h4>
+            <button class="emoji-picker-close" id="emoji-picker-close">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="emoji-categories">
+            <button class="emoji-category active" data-category="smileys">
+              <i class="fas fa-smile"></i>
+            </button>
+            <button class="emoji-category" data-category="people">
+              <i class="fas fa-user"></i>
+            </button>
+            <button class="emoji-category" data-category="nature">
+              <i class="fas fa-leaf"></i>
+            </button>
+            <button class="emoji-category" data-category="food">
+              <i class="fas fa-apple-alt"></i>
+            </button>
+            <button class="emoji-category" data-category="activities">
+              <i class="fas fa-futbol"></i>
+            </button>
+            <button class="emoji-category" data-category="objects">
+              <i class="fas fa-lightbulb"></i>
+            </button>
+            <button class="emoji-category" data-category="symbols">
+              <i class="fas fa-heart"></i>
+            </button>
+          </div>
+          <div class="emoji-grid" id="emoji-grid">
+            <!-- Emojis will be populated here -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settings-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Settings</h3>
+        <button class="modal-close" id="modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-group">
+          <label for="temperature">Temperature (0.1 - 2.0)</label>
+          <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="0.7">
+          <span class="setting-value" id="temperature-value">0.7</span>
+        </div>
+        
+        <div class="setting-group">
+          <label for="ollama-url">Ollama Server URL</label>
+          <div class="url-input-group">
+            <input type="url" id="ollama-url" placeholder="http://localhost:11434" value="http://localhost:11434">
+            <button type="button" class="test-connection-btn" id="test-connection-btn">Test</button>
+          </div>
+          <small class="setting-hint">Enter the URL of your Ollama server instance</small>
+          <div class="connection-status" id="connection-status"></div>
+        </div>
+        
+        <div class="setting-group">
+          <label for="max-tokens">Max Tokens</label>
+          <input type="number" id="max-tokens" min="100" max="4000" value="2000">
+        </div>
+        
+        <div class="setting-group">
+          <label for="system-prompt">System Prompt</label>
+          <textarea id="system-prompt" rows="3" placeholder="You are a helpful AI assistant..."></textarea>
+        </div>
+        
+        <div class="setting-group">
+          <label>
+            <input type="checkbox" id="stream-responses" checked>
+            Enable streaming responses
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
