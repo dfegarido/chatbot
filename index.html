@@ -175,6 +175,23 @@
             Enable streaming responses
           </label>
         </div>
+        
+        <div class="setting-group">
+          <label>
+            <input type="checkbox" id="show-thinking">
+            Show AI thinking process
+          </label>
+          <small class="setting-hint">Display thinking bubbles when the AI reasons through problems (works with DeepSeek models)</small>
+        </div>
+        
+        <div class="settings-group">
+          <label for="download-model-input">Download Model</label>
+          <div class="download-model-row">
+            <input id="download-model-input" type="text" placeholder="e.g. llama3, phi3, mistral, ...">
+            <button id="download-model-btn" type="button">Download</button>
+          </div>
+          <div id="download-model-status" class="download-model-status"></div>
+        </div>
       </div>
     </div>
   </div>

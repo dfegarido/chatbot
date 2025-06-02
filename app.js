@@ -5,6 +5,7 @@ class ChatApp {
     this.chats = this.loadChats();
     this.settings = this.loadSettings();
     this.isStreaming = false;
+    this.showThinking = this.settings.showThinking || false;
     
     this.initializeElements();
     this.initializeEventListeners();
@@ -51,6 +52,14 @@ class ChatApp {
     this.sidebar = document.getElementById('sidebar');
     this.toggleSidebar = document.getElementById('toggle-sidebar');
     this.mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
+    
+    // Download model elements
+    this.downloadModelInput = document.getElementById('download-model-input');
+    this.downloadModelBtn = document.getElementById('download-model-btn');
+    this.downloadModelStatus = document.getElementById('download-model-status');
+    
+    // Show thinking toggle
+    this.showThinkingCheckbox = document.getElementById('show-thinking');
   }
 
   initializeEventListeners() {
@@ -81,6 +90,7 @@ class ChatApp {
     this.maxTokensInput.addEventListener('change', () => this.saveSettings());
     this.systemPromptInput.addEventListener('change', () => this.saveSettings());
     this.streamResponsesCheckbox.addEventListener('change', () => this.saveSettings());
+    this.showThinkingCheckbox.addEventListener('change', () => this.toggleShowThinking());
     this.testConnectionBtn.addEventListener('click', () => this.handleTestConnection());
     
     // Sidebar toggles
@@ -123,6 +133,9 @@ class ChatApp {
         }
       }
     });
+    
+    // Download model button
+    this.downloadModelBtn.addEventListener('click', () => this.handleDownloadModel());
   }
 
   async handleSubmit(e) {
@@ -169,6 +182,7 @@ class ChatApp {
 
   async handleStreamingResponse(message) {
     this.removeTypingIndicator();
+    this.showTypingIndicator();
     
     const streamingMessageDiv = document.createElement('div');
     streamingMessageDiv.className = 'message assistant streaming';
@@ -184,68 +198,10 @@ class ChatApp {
       </div>
       <div class="message-content"></div>
     `;
-    
     this.chatHistory.appendChild(streamingMessageDiv);
     this.scrollToBottom();
-    
     const messageContent = streamingMessageDiv.querySelector('.message-content');
     
-    try {
-      const response = await fetch(this.getOllamaApiUrl(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: this.settings.model,
-          prompt: this.buildPrompt(message),
-          stream: true,
-          options: {
-            temperature: this.settings.temperature,
-            num_predict: this.settings.maxTokens
-          }
-        })
-      });
-
-      if (!response.ok) throw new Error('Ollama server error');
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim());
-
-        for (const line of lines) {
-          try {
-            const data = JSON.parse(line);
-            if (data.response) {
-              fullResponse += data.response;
-              messageContent.innerHTML = this.formatStreamingMessage(fullResponse);
-              this.scrollToBottom();
-            }
-          } catch (e) {
-            // Ignore malformed JSON
-          }
-        }
-      }
-
-      // Update chat with final response and apply final formatting
-      this.updateCurrentChat(message, fullResponse);
-      
-      // Remove the streaming message and replace with properly formatted messages
-      streamingMessageDiv.remove();
-      this.addAssistantMessageWithCodeBlocks(fullResponse);
-      
-    } catch (error) {
-      streamingMessageDiv.remove();
-      throw error;
-    }
-  }
-
-  async handleRegularResponse(message) {
     try {
       const response = await fetch(this.getOllamaApiUrl(), {
         method: 'POST',
@@ -260,16 +216,82 @@ class ChatApp {
           }
         })
       });
-
       if (!response.ok) throw new Error('Ollama server error');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      let lastThought = '';
       
-      const data = await response.json();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(line => line.trim());
+        
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            if (data.thought || data.thinking) {
+              const thoughtText = data.thought || data.thinking;
+              if (thoughtText !== lastThought && this.showThinking) {
+                lastThought = thoughtText;
+                this.updateTypingIndicatorWithThinking(thoughtText);
+              }
+            }
+            if (data.response) {
+              // Remove typing indicator when we start getting actual response
+              this.removeTypingIndicator();
+              fullResponse += data.response;
+              messageContent.innerHTML = this.formatStreamingMessage(fullResponse);
+              this.scrollToBottom();
+            }
+          } catch (e) {
+            // Ignore malformed JSON
+          }
+        }
+      }
+      
+      this.updateCurrentChat(message, fullResponse);
+      streamingMessageDiv.remove();
+      this.addAssistantMessageWithCodeBlocks(fullResponse);
+    } catch (error) {
+      if (streamingMessageDiv) streamingMessageDiv.remove();
       this.removeTypingIndicator();
+      throw error;
+    }
+  }
+
+  async handleRegularResponse(message) {
+    try {
+      // Keep typing animation running during the entire fetch
+      const response = await fetch(this.getOllamaApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.settings.model,
+          prompt: this.buildPrompt(message),
+          stream: false,
+          options: {
+            temperature: this.settings.temperature,
+            num_predict: this.settings.maxTokens
+          }
+        })
+      });
+      if (!response.ok) throw new Error('Ollama server error');
+      const data = await response.json();
       
+      // Show thinking in typing indicator if available and enabled
+      if ((data.thought || data.thinking) && this.showThinking) {
+        this.updateTypingIndicatorWithThinking(data.thought || data.thinking);
+        // Wait a bit to show the thinking before proceeding
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      
+      // Now remove typing indicator and show response
+      this.removeTypingIndicator();
       const assistantResponse = data.response || 'No response received.';
       this.addMessage('assistant', assistantResponse);
       this.updateCurrentChat(message, assistantResponse);
-      
     } catch (error) {
       this.removeTypingIndicator();
       throw error;
@@ -298,7 +320,8 @@ class ChatApp {
     const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
     // Remove trailing slash if present
     const cleanUrl = baseUrl.replace(/\/$/, '');
-    return `${cleanUrl}/api/generate`;
+    // Always use corsproxy.io
+    return `https://corsproxy.io/?${cleanUrl}/api/generate`;
   }
 
   // Test connection to Ollama server
@@ -306,7 +329,8 @@ class ChatApp {
     try {
       const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
       const cleanUrl = baseUrl.replace(/\/$/, '');
-      const response = await fetch(`${cleanUrl}/api/tags`, {
+      // Always use corsproxy.io
+      const response = await fetch(`https://corsproxy.io/?${cleanUrl}/api/tags`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000) // 5 second timeout
       });
@@ -363,7 +387,9 @@ class ChatApp {
   }
 
   addAssistantMessageWithCodeBlocks(content) {
-    const parts = this.parseContentWithCodeBlocks(content);
+    // Remove <think> blocks from the content before parsing
+    const cleanedContent = this.removeThinkingBlocks(content);
+    const parts = this.parseContentWithCodeBlocks(cleanedContent);
     
     parts.forEach((part, index) => {
       if (part.type === 'text' && part.content.trim()) {
@@ -374,16 +400,37 @@ class ChatApp {
     });
   }
 
+  removeThinkingBlocks(content) {
+    // Remove all <think>...</think> blocks from the content
+    return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  }
+
   parseContentWithCodeBlocks(content) {
     const parts = [];
     const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```/g;
     let lastIndex = 0;
-    let match;
+    let matches = [];
 
+    // Find all code blocks
+    let match;
     while ((match = codeBlockRegex.exec(content)) !== null) {
-      // Add text before the code block
-      if (match.index > lastIndex) {
-        const textContent = content.substring(lastIndex, match.index).trim();
+      matches.push({
+        type: 'code',
+        start: match.index,
+        end: match.index + match[0].length,
+        language: match[1] || 'text',
+        content: match[2].trim()
+      });
+    }
+
+    // Sort matches by start position
+    matches.sort((a, b) => a.start - b.start);
+
+    // Process matches and extract text parts
+    for (const match of matches) {
+      // Add text before the current block
+      if (match.start > lastIndex) {
+        const textContent = content.substring(lastIndex, match.start).trim();
         if (textContent) {
           parts.push({
             type: 'text',
@@ -393,16 +440,11 @@ class ChatApp {
       }
 
       // Add the code block
-      parts.push({
-        type: 'code',
-        language: match[1] || 'text',
-        content: match[2].trim()
-      });
-
-      lastIndex = match.index + match[0].length;
+      parts.push(match);
+      lastIndex = match.end;
     }
 
-    // Add remaining text after the last code block
+    // Add remaining text after the last block
     if (lastIndex < content.length) {
       const textContent = content.substring(lastIndex).trim();
       if (textContent) {
@@ -413,7 +455,7 @@ class ChatApp {
       }
     }
 
-    // If no code blocks found, return the entire content as text
+    // If no blocks found, return the entire content as text
     if (parts.length === 0) {
       parts.push({
         type: 'text',
@@ -445,6 +487,28 @@ class ChatApp {
         </div>
         <pre><code class="language-${language}">${this.escapeHtml(code)}</code></pre>
       </div>
+    `;
+    
+    this.chatHistory.appendChild(messageDiv);
+    this.scrollToBottom();
+  }
+
+  addThinkingMessage(thinkingContent) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message assistant thinking-message';
+    const timestamp = new Date();
+    
+    messageDiv.innerHTML = `
+      <div class="message-header">
+        <span>Assistant is thinking...</span>
+        <div class="message-actions">
+          <button class="message-action" onclick="app.copyMessage(this)" title="Copy">
+            <i class="fas fa-copy"></i>
+          </button>
+        </div>
+        <span class="message-time">${this.formatTime(timestamp)}</span>
+      </div>
+      <div class="message-content">${this.formatMarkdown(thinkingContent)}</div>
     `;
     
     this.chatHistory.appendChild(messageDiv);
@@ -595,6 +659,20 @@ class ChatApp {
     
     this.chatHistory.appendChild(typingDiv);
     this.scrollToBottom();
+  }
+
+  updateTypingIndicatorWithThinking(thinkingText) {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+      const header = indicator.querySelector('.message-header span');
+      const content = indicator.querySelector('.typing-dots');
+      
+      if (this.showThinking) {
+        header.textContent = 'Assistant is thinking...';
+        content.innerHTML = `<div class="thinking-content">${this.escapeHtml(thinkingText)}</div>`;
+        content.className = 'thinking-content-wrapper';
+      }
+    }
   }
 
   removeTypingIndicator() {
@@ -751,6 +829,7 @@ class ChatApp {
   openSettings() {
     this.settingsModal.classList.add('active');
     this.loadSettingsToForm();
+    this.updateModelList(); // Fetch models when opening settings
   }
 
   closeSettings() {
@@ -765,7 +844,13 @@ class ChatApp {
     this.maxTokensInput.value = this.settings.maxTokens;
     this.systemPromptInput.value = this.settings.systemPrompt;
     this.streamResponsesCheckbox.checked = this.settings.streamResponses;
+    this.showThinkingCheckbox.checked = this.settings.showThinking;
     this.modelSelector.value = this.settings.model;
+  }
+
+  toggleShowThinking() {
+    this.showThinking = this.showThinkingCheckbox.checked;
+    this.saveSettings();
   }
 
   updateTemperatureValue() {
@@ -777,30 +862,149 @@ class ChatApp {
     this.testConnectionBtn.disabled = true;
     this.testConnectionBtn.textContent = 'Testing...';
     this.connectionStatus.style.display = 'none';
-    
     // Update the URL from the input field temporarily for testing
     const originalUrl = this.settings.ollamaUrl;
     this.settings.ollamaUrl = this.ollamaUrlInput.value;
-    
     const result = await this.testOllamaConnection();
-    
     // Restore original URL if test failed
     if (!result.success) {
       this.settings.ollamaUrl = originalUrl;
+    } else {
+      // If connection is successful, update model list
+      await this.updateModelList();
     }
-    
     // Show result
     this.connectionStatus.textContent = result.message;
     this.connectionStatus.className = `connection-status ${result.success ? 'success' : 'error'}`;
     this.connectionStatus.style.display = 'block';
-    
     // Reset button
     this.testConnectionBtn.disabled = false;
     this.testConnectionBtn.textContent = 'Test';
-    
     // Save settings if connection was successful
     if (result.success) {
       this.saveSettings();
+    }
+  }
+
+  async updateModelList() {
+    const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
+    const cleanUrl = baseUrl.replace(/\/$/, '');
+    const url = `https://corsproxy.io/?${cleanUrl}/api/tags`;
+    try {
+      const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(5000) });
+      if (!response.ok) throw new Error('Failed to fetch models');
+      const data = await response.json();
+      if (data && Array.isArray(data.models)) {
+        this.populateModelSelector(data.models);
+      } else if (data && Array.isArray(data.tags)) {
+        // Some Ollama versions use 'tags' instead of 'models'
+        const tagNames = data.tags.map(tag => tag.name);
+        this.populateModelSelector(tagNames);
+      }
+    } catch (error) {
+      // Optionally show a warning or fallback
+      console.warn('Could not update model list:', error.message);
+    }
+  }
+
+  populateModelSelector(models) {
+    // Remove all options
+    while (this.modelSelector.firstChild) {
+      this.modelSelector.removeChild(this.modelSelector.firstChild);
+    }
+    // Add new options
+    models.forEach(model => {
+      let value, label;
+      if (typeof model === 'string') {
+        value = label = model;
+      } else if (model && typeof model === 'object') {
+        // Try to use 'name' or 'model' property
+        value = model.name || model.model || JSON.stringify(model);
+        label = model.name || model.model || '[unknown model]';
+      } else {
+        value = label = String(model);
+      }
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      this.modelSelector.appendChild(option);
+    });
+    // Set current value if available
+    const modelValues = models.map(m => (typeof m === 'string' ? m : (m.name || m.model)));
+    if (modelValues.includes(this.settings.model)) {
+      this.modelSelector.value = this.settings.model;
+    } else if (modelValues.length > 0) {
+      this.modelSelector.value = modelValues[0];
+      this.settings.model = modelValues[0];
+      this.saveSettings();
+    }
+  }
+
+  async handleDownloadModel() {
+    const model = this.downloadModelInput.value.trim();
+    if (!model) {
+      this.downloadModelStatus.textContent = 'Please enter a model name.';
+      this.downloadModelStatus.className = 'download-model-status error';
+      return;
+    }
+    this.downloadModelBtn.disabled = true;
+    this.downloadModelStatus.textContent = 'Downloading...';
+    this.downloadModelStatus.className = 'download-model-status';
+    const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
+    const cleanUrl = baseUrl.replace(/\/$/, '');
+    const url = `https://corsproxy.io/?${cleanUrl}/api/pull`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: model })
+      });
+      if (!response.ok) throw new Error('Failed to start download');
+      // Ollama streams progress as JSON lines
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let lastPercent = 0;
+      let finished = false;
+      while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        if (streamDone) break;
+        const chunk = decoder.decode(value);
+        // Each line is a JSON object
+        const lines = chunk.split('\n').filter(line => line.trim());
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            if (data.status === 'success' || data.completed) {
+              finished = true;
+              this.downloadModelStatus.textContent = `Download complete for model: ${model}`;
+              this.downloadModelStatus.className = 'download-model-status success';
+            } else if (typeof data.total === 'number' && typeof data.completed === 'number') {
+              // Calculate percent
+              const percent = Math.floor((data.completed / data.total) * 100);
+              if (percent !== lastPercent) {
+                this.downloadModelStatus.textContent = `Downloading ${model}: ${percent}%`;
+                this.downloadModelStatus.className = 'download-model-status';
+                lastPercent = percent;
+              }
+            } else if (data.status) {
+              this.downloadModelStatus.textContent = `Downloading ${model}: ${data.status}`;
+              this.downloadModelStatus.className = 'download-model-status';
+            }
+          } catch (e) {
+            // Ignore malformed lines
+          }
+        }
+      }
+      if (!finished) {
+        this.downloadModelStatus.textContent = `Download started for model: ${model}`;
+        this.downloadModelStatus.className = 'download-model-status';
+      }
+    } catch (error) {
+      this.downloadModelStatus.textContent = `Download failed: ${error.message}`;
+      this.downloadModelStatus.className = 'download-model-status error';
+    } finally {
+      this.downloadModelBtn.disabled = false;
     }
   }
 
@@ -812,6 +1016,7 @@ class ChatApp {
       maxTokens: parseInt(this.maxTokensInput.value),
       systemPrompt: this.systemPromptInput.value,
       streamResponses: this.streamResponsesCheckbox.checked,
+      showThinking: this.showThinkingCheckbox.checked,
       theme: this.settings.theme || 'dark'
     };
     
@@ -826,6 +1031,7 @@ class ChatApp {
       maxTokens: 2000,
       systemPrompt: 'You are a helpful AI assistant.',
       streamResponses: true,
+      showThinking: false,
       theme: 'dark'
     };
     

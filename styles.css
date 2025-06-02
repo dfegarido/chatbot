@@ -14,6 +14,8 @@
   --warning-color: #f59e0b;
   --message-user-bg: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   --message-assistant-bg: #1f2937;
+  --thinking-bg: #f5f7fa;
+  --thinking-color: #555;
   --sidebar-width: 280px;
   --header-height: 60px;
   --input-height: 60px;
@@ -326,6 +328,21 @@ body {
   border: 1px solid var(--border-color);
 }
 
+.message.assistant.thinking-message {
+  background: var(--thinking-bg, #f5f7fa);
+  color: var(--thinking-color, #555);
+  border-left: 4px solid #6c63ff;
+  font-style: italic;
+  opacity: 0.95;
+  margin-bottom: 0.5em;
+}
+
+.message.assistant.thinking-message .message-header {
+  font-size: 0.95em;
+  color: #6c63ff;
+  font-weight: 600;
+}
+
 .message-header {
   display: flex;
   align-items: center;
@@ -393,6 +410,31 @@ body {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* Thinking content in typing indicator */
+.thinking-content-wrapper {
+  display: block;
+  padding: 0.5rem 0;
+}
+
+.thinking-content {
+  background: var(--thinking-bg, #f5f7fa);
+  color: var(--thinking-color, #6c63ff);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border-left: 3px solid #6c63ff;
+  font-style: italic;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-top: 0.25rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+body.light-theme .thinking-content {
+  background: #f0f4ff;
+  color: #4f46e5;
 }
 
 /* Chat Input */
@@ -998,4 +1040,35 @@ body.light-theme .code-block code {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* Download Model Section in Settings Modal */
+.download-model-row {
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+  margin-top: 0.25em;
+}
+
+#download-model-selector {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#download-model-btn {
+  flex: 0 0 auto;
+}
+
+.download-model-status {
+  margin-top: 0.5em;
+  font-size: 0.95em;
+  min-height: 1.2em;
+}
+
+.download-model-status.success {
+  color: var(--success-color, #2ecc40);
+}
+
+.download-model-status.error {
+  color: var(--error-color, #e74c3c);
 }
