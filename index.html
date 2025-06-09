@@ -49,10 +49,15 @@
         
         <div class="header-controls">
           <select class="model-selector" id="model-selector">
-            <option value="llama3.2:latest">Llama 3.2</option>
-            <option value="deepseek-coder:1.3b">DeepSeek Coder</option>
-            <option value="deepseek-r1:8b">DeepSeek R1</option>
-            <option value="deepseek-coder-v2:latest">DeepSeek Coder V2</option>
+            <option value="llama3.2:latest">Llama 3.2 (Ollama)</option>
+            <option value="deepseek-coder:1.3b">DeepSeek Coder (Ollama)</option>
+            <option value="deepseek-r1:8b">DeepSeek R1 (Ollama)</option>
+            <option value="deepseek-coder-v2:latest">DeepSeek Coder V2 (Ollama)</option>
+            <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+            <option value="llama3-8b-8192">Llama 3 8B (Groq)</option>
+            <option value="llama3-70b-8192">Llama 3 70B (Groq)</option>
+            <option value="mixtral-8x7b-32768">Mixtral 8x7B (Groq)</option>
+            <option value="gemma2-9b-it">Gemma2 9B (Groq)</option>
           </select>
           
           <button class="clear-chat" id="clear-chat">
@@ -150,6 +155,14 @@
         </div>
         
         <div class="setting-group">
+          <label for="api-provider">API Provider</label>
+          <select id="api-provider">
+            <option value="ollama">Ollama (Local)</option>
+            <option value="groq">Groq (Cloud)</option>
+          </select>
+        </div>
+        
+        <div class="setting-group" id="ollama-settings">
           <label for="ollama-url">Ollama Server URL</label>
           <div class="url-input-group">
             <input type="url" id="ollama-url" placeholder="http://localhost:11434" value="http://localhost:11434">
@@ -157,6 +170,16 @@
           </div>
           <small class="setting-hint">Enter the URL of your Ollama server instance</small>
           <div class="connection-status" id="connection-status"></div>
+        </div>
+        
+        <div class="setting-group" id="groq-settings" style="display: none;">
+          <label for="groq-api-key">Groq API Key</label>
+          <div class="api-key-input-group">
+            <input type="password" id="groq-api-key" placeholder="Enter your Groq API key">
+            <button type="button" class="test-connection-btn" id="test-groq-btn">Test</button>
+          </div>
+          <small class="setting-hint">Get your API key from <a href="https://console.groq.com/keys" target="_blank">Groq Console</a></small>
+          <div class="connection-status" id="groq-connection-status"></div>
         </div>
         
         <div class="setting-group">

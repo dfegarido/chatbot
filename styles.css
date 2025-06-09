@@ -1072,3 +1072,50 @@ body.light-theme .code-block code {
 .download-model-status.error {
   color: var(--error-color, #e74c3c);
 }
+
+/* API provider and key input styling */
+.api-key-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.api-key-input-group input[type="password"] {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.api-key-input-group .test-connection-btn {
+  padding: 8px 16px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.api-key-input-group .test-connection-btn:hover {
+  background: var(--accent-hover);
+}
+
+.api-key-input-group .test-connection-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#api-provider {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+}

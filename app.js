@@ -48,6 +48,14 @@ class ChatApp {
     this.testConnectionBtn = document.getElementById('test-connection-btn');
     this.connectionStatus = document.getElementById('connection-status');
     
+    // API provider elements
+    this.apiProviderSelect = document.getElementById('api-provider');
+    this.ollamaSettings = document.getElementById('ollama-settings');
+    this.groqSettings = document.getElementById('groq-settings');
+    this.groqApiKeyInput = document.getElementById('groq-api-key');
+    this.testGroqBtn = document.getElementById('test-groq-btn');
+    this.groqConnectionStatus = document.getElementById('groq-connection-status');
+    
     // Sidebar elements
     this.sidebar = document.getElementById('sidebar');
     this.toggleSidebar = document.getElementById('toggle-sidebar');
@@ -92,6 +100,11 @@ class ChatApp {
     this.streamResponsesCheckbox.addEventListener('change', () => this.saveSettings());
     this.showThinkingCheckbox.addEventListener('change', () => this.toggleShowThinking());
     this.testConnectionBtn.addEventListener('click', () => this.handleTestConnection());
+    
+    // API provider event listeners
+    this.apiProviderSelect.addEventListener('change', () => this.handleApiProviderChange());
+    this.groqApiKeyInput.addEventListener('change', () => this.saveSettings());
+    this.testGroqBtn.addEventListener('click', () => this.handleTestGroqConnection());
     
     // Sidebar toggles
     this.toggleSidebar.addEventListener('click', () => this.toggleSidebarVisibility());
@@ -143,6 +156,13 @@ class ChatApp {
     const message = this.chatMessage.value.trim();
     if (!message || this.isStreaming) return;
 
+    // Validate API configuration
+    const validationError = this.validateApiConfiguration();
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
     // Ensure we have a current chat
     if (!this.currentChatId) {
       this.createNewChat();
@@ -166,17 +186,51 @@ class ChatApp {
       console.error('Chat error:', error);
       this.removeTypingIndicator();
       
-      let errorMessage = 'Sorry, there was an error processing your request.';
-      if (error.message.includes('fetch')) {
-        errorMessage += ` Please check your Ollama server URL (${this.settings.ollamaUrl}) and make sure Ollama is running.`;
-      } else {
-        errorMessage += ' Please try again.';
-      }
-      
+      let errorMessage = this.getContextualErrorMessage(error);
       this.addMessage('assistant', errorMessage);
     } finally {
       this.isStreaming = false;
       this.sendBtn.disabled = false;
+    }
+  }
+
+  validateApiConfiguration() {
+    if (this.settings.apiProvider === 'groq') {
+      const apiKey = this.settings.groqApiKey || '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'; // Fallback key
+      if (!apiKey || apiKey.trim() === '') {
+        return 'Please configure your Groq API key in settings before sending messages.';
+      }
+    } else {
+      if (!this.settings.ollamaUrl || this.settings.ollamaUrl.trim() === '') {
+        return 'Please configure your Ollama server URL in settings before sending messages.';
+      }
+    }
+    return null;
+  }
+
+  getContextualErrorMessage(error) {
+    const baseMessage = 'Sorry, there was an error processing your request.';
+    
+    if (this.settings.apiProvider === 'groq') {
+      if (error.message.includes('401')) {
+        return `${baseMessage} Please check your Groq API key in settings.`;
+      } else if (error.message.includes('429')) {
+        return `${baseMessage} Rate limit exceeded. Please try again later.`;
+      } else if (error.message.includes('404') && error.message.includes('model')) {
+        return `${baseMessage} The selected model is not available on Groq. Please select a different model in the header.`;
+      } else if (error.message.includes('modelnotfound')) {
+        return `${baseMessage} The model "${this.settings.model}" is not available on Groq. Please select a Groq-compatible model like "llama-3.3-70b-versatile".`;
+      } else if (error.message.includes('fetch')) {
+        return `${baseMessage} Please check your internet connection.`;
+      } else {
+        return `${baseMessage} Groq API error: ${error.message}`;
+      }
+    } else {
+      if (error.message.includes('fetch')) {
+        return `${baseMessage} Please check your Ollama server URL (${this.settings.ollamaUrl}) and make sure Ollama is running.`;
+      } else {
+        return `${baseMessage} Ollama error: ${error.message}`;
+      }
     }
   }
 
@@ -203,50 +257,81 @@ class ChatApp {
     const messageContent = streamingMessageDiv.querySelector('.message-content');
     
     try {
-      const response = await fetch(this.getOllamaApiUrl(), {
+      const response = await fetch(this.getApiUrl(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: this.settings.model,
-          prompt: this.buildPrompt(message),
-          stream: false,
-          options: {
-            temperature: this.settings.temperature,
-            num_predict: this.settings.maxTokens
-          }
-        })
+        headers: this.getApiHeaders(),
+        body: JSON.stringify(this.buildRequestBody(message))
       });
-      if (!response.ok) throw new Error('Ollama server error');
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+      
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
       let lastThought = '';
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim());
-        
-        for (const line of lines) {
-          try {
-            const data = JSON.parse(line);
-            if (data.thought || data.thinking) {
-              const thoughtText = data.thought || data.thinking;
-              if (thoughtText !== lastThought && this.showThinking) {
-                lastThought = thoughtText;
-                this.updateTypingIndicatorWithThinking(thoughtText);
+      if (this.settings.apiProvider === 'groq') {
+        // Handle Groq streaming format (Server-Sent Events)
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n').filter(line => line.trim() && line.startsWith('data: '));
+          
+          for (const line of lines) {
+            if (line.trim() === 'data: [DONE]') continue;
+            
+            try {
+              const jsonStr = line.replace('data: ', '');
+              const data = JSON.parse(jsonStr);
+              
+              if (data.choices && data.choices.length > 0) {
+                const delta = data.choices[0].delta;
+                if (delta && delta.content) {
+                  // Remove typing indicator when we start getting actual response
+                  this.removeTypingIndicator();
+                  fullResponse += delta.content;
+                  messageContent.innerHTML = this.formatStreamingMessage(fullResponse);
+                  this.scrollToBottom();
+                }
               }
+            } catch (e) {
+              // Ignore malformed JSON
             }
-            if (data.response) {
-              // Remove typing indicator when we start getting actual response
-              this.removeTypingIndicator();
-              fullResponse += data.response;
-              messageContent.innerHTML = this.formatStreamingMessage(fullResponse);
-              this.scrollToBottom();
+          }
+        }
+      } else {
+        // Handle Ollama streaming format
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n').filter(line => line.trim());
+          
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line);
+              if (data.thought || data.thinking) {
+                const thoughtText = data.thought || data.thinking;
+                if (thoughtText !== lastThought && this.showThinking) {
+                  lastThought = thoughtText;
+                  this.updateTypingIndicatorWithThinking(thoughtText);
+                }
+              }
+              if (data.response) {
+                // Remove typing indicator when we start getting actual response
+                this.removeTypingIndicator();
+                fullResponse += data.response;
+                messageContent.innerHTML = this.formatStreamingMessage(fullResponse);
+                this.scrollToBottom();
+              }
+            } catch (e) {
+              // Ignore malformed JSON
             }
-          } catch (e) {
-            // Ignore malformed JSON
           }
         }
       }
@@ -264,32 +349,44 @@ class ChatApp {
   async handleRegularResponse(message) {
     try {
       // Keep typing animation running during the entire fetch
-      const response = await fetch(this.getOllamaApiUrl(), {
+      const response = await fetch(this.getApiUrl(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: this.settings.model,
-          prompt: this.buildPrompt(message),
-          stream: false,
-          options: {
-            temperature: this.settings.temperature,
-            num_predict: this.settings.maxTokens
-          }
-        })
+        headers: this.getApiHeaders(),
+        body: JSON.stringify(this.buildRequestBody(message))
       });
-      if (!response.ok) throw new Error('Ollama server error');
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+      
       const data = await response.json();
       
+      let assistantResponse;
+      let thinkingContent = null;
+      
+      if (this.settings.apiProvider === 'groq') {
+        // Handle Groq response format
+        if (data.choices && data.choices.length > 0) {
+          assistantResponse = data.choices[0].message.content;
+        } else {
+          throw new Error('Invalid response format from Groq API');
+        }
+      } else {
+        // Handle Ollama response format
+        assistantResponse = data.response || 'No response received.';
+        thinkingContent = data.thought || data.thinking;
+      }
+      
       // Show thinking in typing indicator if available and enabled
-      if ((data.thought || data.thinking) && this.showThinking) {
-        this.updateTypingIndicatorWithThinking(data.thought || data.thinking);
+      if (thinkingContent && this.showThinking) {
+        this.updateTypingIndicatorWithThinking(thinkingContent);
         // Wait a bit to show the thinking before proceeding
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
       
       // Now remove typing indicator and show response
       this.removeTypingIndicator();
-      const assistantResponse = data.response || 'No response received.';
       this.addMessage('assistant', assistantResponse);
       this.updateCurrentChat(message, assistantResponse);
     } catch (error) {
@@ -316,12 +413,90 @@ class ChatApp {
     return prompt;
   }
 
-  getOllamaApiUrl() {
-    const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
-    // Remove trailing slash if present
-    const cleanUrl = baseUrl.replace(/\/$/, '');
-    // Always use corsproxy.io
-    return `https://corsproxy.io/?${cleanUrl}/api/generate`;
+  getApiUrl() {
+    if (this.settings.apiProvider === 'groq') {
+      return 'https://api.groq.com/openai/v1/chat/completions';
+    } else {
+      const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
+      const cleanUrl = baseUrl.replace(/\/$/, '');
+      return `https://corsproxy.io/?${cleanUrl}/api/generate`;
+    }
+  }
+
+  getApiHeaders() {
+    if (this.settings.apiProvider === 'groq') {
+      const apiKey = this.settings.groqApiKey || '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'; // Fallback key
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      };
+    } else {
+      return { 'Content-Type': 'application/json' };
+    }
+  }
+
+  buildRequestBody(message) {
+    if (this.settings.apiProvider === 'groq') {
+      // Ensure we're using a Groq-compatible model
+      const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+      const modelToUse = groqModels.includes(this.settings.model) ? this.settings.model : 'llama-3.3-70b-versatile';
+      
+      const messages = this.buildGroqMessages(message);
+      return {
+        model: modelToUse,
+        messages: messages,
+        temperature: this.settings.temperature,
+        max_tokens: this.settings.maxTokens,
+        stream: this.settings.streamResponses
+      };
+    } else {
+      // Ensure we're using an Ollama-compatible model
+      const ollamaModels = ['llama3.2:latest', 'deepseek-coder:1.3b', 'deepseek-r1:8b', 'deepseek-coder-v2:latest'];
+      const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+      const modelToUse = groqModels.includes(this.settings.model) ? 'llama3.2:latest' : this.settings.model;
+      
+      return {
+        model: modelToUse,
+        prompt: this.buildPrompt(message),
+        stream: this.settings.streamResponses,
+        options: {
+          temperature: this.settings.temperature,
+          num_predict: this.settings.maxTokens
+        }
+      };
+    }
+  }
+
+  buildGroqMessages(message) {
+    const messages = [];
+    
+    // Add system message
+    if (this.settings.systemPrompt) {
+      messages.push({
+        role: 'system',
+        content: this.settings.systemPrompt
+      });
+    }
+    
+    // Add conversation history
+    const chat = this.chats[this.currentChatId];
+    if (chat && chat.messages.length > 0) {
+      const recentMessages = chat.messages.slice(-10); // Last 10 messages for context
+      for (const msg of recentMessages) {
+        messages.push({
+          role: msg.role === 'user' ? 'user' : 'assistant',
+          content: msg.content
+        });
+      }
+    }
+    
+    // Add current message
+    messages.push({
+      role: 'user',
+      content: message
+    });
+    
+    return messages;
   }
 
   // Test connection to Ollama server
@@ -846,6 +1021,11 @@ class ChatApp {
     this.streamResponsesCheckbox.checked = this.settings.streamResponses;
     this.showThinkingCheckbox.checked = this.settings.showThinking;
     this.modelSelector.value = this.settings.model;
+    this.apiProviderSelect.value = this.settings.apiProvider;
+    this.groqApiKeyInput.value = this.settings.groqApiKey;
+    
+    // Show/hide appropriate settings sections
+    this.handleApiProviderChange();
   }
 
   toggleShowThinking() {
@@ -883,6 +1063,88 @@ class ChatApp {
     // Save settings if connection was successful
     if (result.success) {
       this.saveSettings();
+    }
+  }
+
+  handleApiProviderChange() {
+    const provider = this.apiProviderSelect.value;
+    
+    // Show/hide relevant settings sections
+    if (provider === 'groq') {
+      this.ollamaSettings.style.display = 'none';
+      this.groqSettings.style.display = 'block';
+      
+      // Switch to a Groq-compatible model if current model is Ollama-specific
+      const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+      if (!groqModels.includes(this.settings.model)) {
+        this.settings.model = 'llama-3.3-70b-versatile';
+        this.modelSelector.value = 'llama-3.3-70b-versatile';
+      }
+    } else {
+      this.ollamaSettings.style.display = 'block';
+      this.groqSettings.style.display = 'none';
+      
+      // Switch to an Ollama-compatible model if current model is Groq-specific
+      const ollamaModels = ['llama3.2:latest', 'deepseek-coder:1.3b', 'deepseek-r1:8b', 'deepseek-coder-v2:latest'];
+      const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+      if (groqModels.includes(this.settings.model)) {
+        this.settings.model = 'llama3.2:latest';
+        this.modelSelector.value = 'llama3.2:latest';
+      }
+    }
+    
+    this.saveSettings();
+  }
+
+  async handleTestGroqConnection() {
+    this.testGroqBtn.disabled = true;
+    this.testGroqBtn.textContent = 'Testing...';
+    this.groqConnectionStatus.style.display = 'none';
+    
+    const result = await this.testGroqConnection();
+    
+    // Show result
+    this.groqConnectionStatus.textContent = result.message;
+    this.groqConnectionStatus.className = `connection-status ${result.success ? 'success' : 'error'}`;
+    this.groqConnectionStatus.style.display = 'block';
+    
+    // Reset button
+    this.testGroqBtn.disabled = false;
+    this.testGroqBtn.textContent = 'Test';
+    
+    // Save settings if connection was successful
+    if (result.success) {
+      this.saveSettings();
+    }
+  }
+
+  async testGroqConnection() {
+    try {
+      const apiKey = this.groqApiKeyInput.value.trim() || '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'; // Fallback key
+      if (!apiKey) {
+        return { success: false, message: 'Please enter your Groq API key' };
+      }
+      
+      const response = await fetch('https://api.groq.com/openai/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (response.ok) {
+        return { success: true, message: 'Connected successfully to Groq API' };
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        return { success: false, message: `API Error: ${errorData.error?.message || response.statusText}` };
+      }
+    } catch (error) {
+      if (error.name === 'TimeoutError') {
+        return { success: false, message: 'Connection timeout - check your internet connection' };
+      }
+      return { success: false, message: `Connection failed: ${error.message}` };
     }
   }
 
@@ -1017,7 +1279,9 @@ class ChatApp {
       systemPrompt: this.systemPromptInput.value,
       streamResponses: this.streamResponsesCheckbox.checked,
       showThinking: this.showThinkingCheckbox.checked,
-      theme: this.settings.theme || 'dark'
+      theme: this.settings.theme || 'dark',
+      apiProvider: this.apiProviderSelect.value,
+      groqApiKey: this.groqApiKeyInput.value
     };
     
     localStorage.setItem('chatAppSettings', JSON.stringify(this.settings));
@@ -1032,11 +1296,29 @@ class ChatApp {
       systemPrompt: 'You are a helpful AI assistant.',
       streamResponses: true,
       showThinking: false,
-      theme: 'dark'
+      theme: 'dark',
+      apiProvider: 'ollama',
+      groqApiKey: ''
     };
     
     const saved = localStorage.getItem('chatAppSettings');
-    return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+    const settings = saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+    
+    // Ensure correct model for API provider
+    if (settings.apiProvider === 'groq') {
+      const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+      if (!groqModels.includes(settings.model)) {
+        settings.model = 'llama-3.3-70b-versatile';
+      }
+    } else {
+      const ollamaModels = ['llama3.2:latest', 'deepseek-coder:1.3b', 'deepseek-r1:8b', 'deepseek-coder-v2:latest'];
+      const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+      if (groqModels.includes(settings.model)) {
+        settings.model = 'llama3.2:latest';
+      }
+    }
+    
+    return settings;
   }
 
   // Theme Management
