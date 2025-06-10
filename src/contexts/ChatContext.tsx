@@ -18,8 +18,18 @@ type ChatAction =
   | { type: 'SET_STREAMING'; payload: boolean }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<Settings> };
 
+// Get default API provider based on environment
+const getDefaultApiProvider = (): 'ollama' | 'groq' => {
+  // In production (GitHub Pages), default to Groq to avoid CORS issues
+  if (window.location.hostname === 'dfegarido.github.io') {
+    return 'groq';
+  }
+  // In development, default to Ollama
+  return 'ollama';
+};
+
 const defaultSettings: Settings = {
-  model: 'llama3.2:latest',
+  model: getDefaultApiProvider() === 'groq' ? 'llama-3.3-70b-versatile' : 'llama3.2:latest',
   temperature: 0.7,
   ollamaUrl: 'http://localhost:11434',
   maxTokens: 2000,
@@ -27,8 +37,8 @@ const defaultSettings: Settings = {
   streamResponses: true,
   showThinking: false,
   theme: 'dark',
-  apiProvider: 'ollama',
-  groqApiKey: ''
+  apiProvider: getDefaultApiProvider(),
+  groqApiKey: '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'
 };
 
 const initialState: ChatState = {

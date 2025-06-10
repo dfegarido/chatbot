@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, TestTube } from 'lucide-react';
+import { X, TestTube, AlertTriangle } from 'lucide-react';
 import { useChat } from '@/contexts/ChatContext';
 import { ChatApiService } from '@/services/api';
 import { cn } from '@/utils';
@@ -154,6 +154,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {/* Ollama Settings */}
           {localSettings.apiProvider === 'ollama' && (
             <div className="space-y-4">
+              {/* CORS Warning for deployed sites */}
+              {window.location.hostname === 'dfegarido.github.io' && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-amber-700 dark:text-amber-300">
+                      <strong>CORS Notice:</strong> Ollama servers may not work from deployed sites due to CORS restrictions. 
+                      Consider using Groq API for deployed applications or configure CORS on your Ollama server.
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Ollama Server URL
