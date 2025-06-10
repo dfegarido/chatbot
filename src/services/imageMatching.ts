@@ -17,11 +17,29 @@ export interface ImageItem {
   };
 }
 
+// Get the correct base path for images based on environment
+const getBasePath = (): string => {
+  if (typeof window !== 'undefined') {
+    // In production (GitHub Pages), use /chatbot/ prefix
+    if (window.location.hostname === 'dfegarido.github.io') {
+      return '/chatbot';
+    }
+    // In development (localhost), check if we're using the base path
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // Otherwise, we're in development mode with no base path
+      return '';
+    }
+  }
+  // Fallback for production builds
+  return '/chatbot';
+};
+
 // Generate images with dynamic paths using configuration
 const getAvailableImages = (): ImageItem[] => {
+  const basePath = getBasePath();
   return imageConfig.map(item => ({
     filename: item.filename,
-    path: `${window.location.origin}/${item.filename}`,
+    path: `${window.location.origin}${basePath}/${item.filename}`,
     keywords: item.keywords,
     description: item.description,
     category: item.category || 'general',
