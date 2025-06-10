@@ -81,7 +81,7 @@ export function Message({ message }: MessageProps) {
                   ? "prose-invert" 
                   : "dark:prose-invert"
               )}>
-                <MessageContent content={message.content} />
+                <MessageContent content={message.content} images={message.images} />
               </div>
 
               {/* Message tail */}

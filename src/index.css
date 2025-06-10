@@ -17,6 +17,39 @@
     @apply w-2 h-2 bg-gray-400 rounded-full animate-pulse;
     animation-delay: calc(var(--i) * 0.2s);
   }
+
+  /* Enhanced typing animation */
+  .typing-dots-enhanced {
+    @apply flex items-center;
+  }
+
+  .typing-dots .dot-1,
+  .typing-dots .dot-2,
+  .typing-dots .dot-3 {
+    @apply w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full;
+    animation: bounce-typing 1.4s infinite ease-in-out both;
+  }
+
+  .typing-dots .dot-1 {
+    animation-delay: -0.32s;
+  }
+
+  .typing-dots .dot-2 {
+    animation-delay: -0.16s;
+  }
+
+  .typing-dots .dot-3 {
+    animation-delay: 0s;
+  }
+
+  /* Typewriter cursor animation */
+  .typewriter-text {
+    @apply inline-block;
+  }
+
+  .typing-text {
+    animation: fade-in-out 2s infinite;
+  }
   
   .thinking-content {
     @apply rounded-xl p-3 text-sm border backdrop-blur-sm;
@@ -64,6 +97,27 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  /* Enhanced typing animations */
+  @keyframes bounce-typing {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    30% {
+      transform: translateY(-10px);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-out {
+    0%, 100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
     }
   }
 

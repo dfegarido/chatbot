@@ -4,6 +4,7 @@ export interface Message {
   content: string;
   timestamp: string;
   thinking?: string;
+  images?: string[]; // Array of image URLs or paths
 }
 
 export interface Chat {

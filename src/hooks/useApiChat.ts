@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ChatApiService } from '@/services/api';
+import { ImageMatchingService } from '@/services/imageMatching';
 import { useChat } from '@/contexts/ChatContext';
 import { Message } from '@/types';
 
@@ -8,15 +9,40 @@ export function useApiChat() {
   const [isTyping, setIsTyping] = useState(false);
   const [typingMessage, setTypingMessage] = useState('');
 
+  // Enhanced typing simulation
+  const simulateTyping = useCallback(async (duration: number = 2000) => {
+    const typingMessages = [
+      '',
+      'Thinking about your request...',
+      'Looking through our cupcake menu...',
+      'Preparing your response...',
+      'Just a moment...'
+    ];
+
+    let currentIndex = 0;
+    
+    const typingInterval = setInterval(() => {
+      if (currentIndex < typingMessages.length) {
+        setTypingMessage(typingMessages[currentIndex]);
+        currentIndex++;
+      }
+    }, duration / typingMessages.length);
+
+    return () => clearInterval(typingInterval);
+  }, []);
+
   const sendMessage = useCallback(async (content: string) => {
     if (!state.currentChatId || state.isStreaming) return;
 
-    const apiService = new ChatApiService(state.settings);
+    // Check if the query matches any images or detailed product questions
+    const imageService = new ImageMatchingService();
     
-    // Validate configuration
-    const validationError = apiService.validateConfiguration();
-    if (validationError) {
-      throw new Error(validationError);
+    // First try the enhanced detailed question answering
+    let imageResponse = imageService.answerProductQuestion(content);
+    
+    // If no detailed response, fall back to general image matching
+    if (!imageResponse) {
+      imageResponse = imageService.generateImageResponse(content);
     }
 
     // Create user message
@@ -29,6 +55,50 @@ export function useApiChat() {
 
     // Add user message
     dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId, message: userMessage } });
+
+    // If we have relevant images, include them in the API request for AI enhancement
+    if (imageResponse) {
+      // Get detailed image information for AI processing
+      const relevantImages = imageService.findRelevantImages(content, 5);
+      const imageDetails = relevantImages.map(img => ({
+        description: img.description,
+        category: img.category,
+        keywords: img.keywords,
+        prices: img.prices,
+        filename: img.filename
+      }));
+
+      // Enhance the user message with image context for AI
+      const enhancedContent = `${content}
+
+[PRODUCT_CONTEXT_DATA:
+${imageDetails.map(img => `
+PRODUCT: ${img.description}
+CATEGORY: ${img.category}
+KEYWORDS: ${img.keywords.join(', ')}
+AVAILABLE_SIZES_AND_PRICING: ${JSON.stringify(img.prices, null, 2)}
+IMAGE_FILE: ${img.filename}
+---`).join('')}
+END_PRODUCT_CONTEXT_DATA]
+
+User Query: ${content}
+
+Please provide a comprehensive response using the product information above. Include specific pricing details, product features, and helpful recommendations based on the available options. Be conversational and make the response engaging while incorporating all relevant product details from the context data.`;
+
+      // Continue with API call using enhanced content, and include images in response
+      content = enhancedContent;
+      // Store image response for later use
+      (window as any).__tempImageResponse = imageResponse;
+    }
+
+    const apiService = new ChatApiService(state.settings);
+    
+    // Validate configuration
+    const validationError = apiService.validateConfiguration();
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     dispatch({ type: 'SET_STREAMING', payload: true });
     
     try {
@@ -65,6 +135,7 @@ export function useApiChat() {
     chatHistory: Message[]
   ) => {
     setIsTyping(true);
+    setTypingMessage('Processing your request...');
     
     try {
       const response = await fetch(apiService.getApiUrl(), {
@@ -141,13 +212,20 @@ export function useApiChat() {
         }
       }
       
+      // Check if we have stored image response for this query
+      const storedImageResponse = (window as any).__tempImageResponse;
+      
       // Create assistant message
       const assistantMessage: Message = {
         id: `msg_${Date.now()}_assistant`,
         role: 'assistant',
         content: fullResponse,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        images: storedImageResponse?.images || undefined
       };
+      
+      // Clear stored image response
+      (window as any).__tempImageResponse = undefined;
       
       dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId!, message: assistantMessage } });
     } finally {
@@ -162,7 +240,9 @@ export function useApiChat() {
     chatHistory: Message[]
   ) => {
     setIsTyping(true);
-    setTypingMessage('Generating response...');
+    
+    // Start typing simulation
+    const clearTyping = await simulateTyping(3000);
     
     try {
       const response = await fetch(apiService.getApiUrl(), {
@@ -198,18 +278,26 @@ export function useApiChat() {
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
       
+      // Check if we have stored image response for this query
+      const storedImageResponse = (window as any).__tempImageResponse;
+      
       const assistantMessage: Message = {
         id: `msg_${Date.now()}_assistant`,
         role: 'assistant',
         content: assistantResponse,
         timestamp: new Date().toISOString(),
-        thinking: thinkingContent || undefined
+        thinking: thinkingContent || undefined,
+        images: storedImageResponse?.images || undefined
       };
+      
+      // Clear stored image response
+      (window as any).__tempImageResponse = undefined;
       
       dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId!, message: assistantMessage } });
     } finally {
       setIsTyping(false);
       setTypingMessage('');
+      clearTyping();
     }
   };
 
