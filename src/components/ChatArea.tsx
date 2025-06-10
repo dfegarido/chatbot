@@ -22,17 +22,21 @@ export function ChatArea() {
   }, [messages, isTyping, typingMessage]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 custom-scrollbar">
       {messages.length === 0 && !isTyping ? (
         <WelcomeMessage />
       ) : (
         <div className="space-y-0">
-          {messages.map((message) => (
-            <Message key={message.id} message={message} />
+          {messages.map((message, index) => (
+            <div key={message.id} className="message-animate" style={{ animationDelay: `${index * 0.1}s` }}>
+              <Message message={message} />
+            </div>
           ))}
           
           {isTyping && (
-            <TypingIndicator message={typingMessage} />
+            <div className="message-animate">
+              <TypingIndicator message={typingMessage} />
+            </div>
           )}
           
           <div ref={messagesEndRef} />
