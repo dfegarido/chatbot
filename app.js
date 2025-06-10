@@ -419,7 +419,7 @@ class ChatApp {
     } else {
       const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
       const cleanUrl = baseUrl.replace(/\/$/, '');
-      return `https://corsproxy.io/?${cleanUrl}/api/generate`;
+      return `${cleanUrl}/api/generate`;
     }
   }
 
@@ -505,7 +505,7 @@ class ChatApp {
       const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
       const cleanUrl = baseUrl.replace(/\/$/, '');
       // Always use corsproxy.io
-      const response = await fetch(`https://corsproxy.io/?${cleanUrl}/api/tags`, {
+      const response = await fetch(`${cleanUrl}/api/tags`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000) // 5 second timeout
       });
@@ -1151,7 +1151,7 @@ class ChatApp {
   async updateModelList() {
     const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
     const cleanUrl = baseUrl.replace(/\/$/, '');
-    const url = `https://corsproxy.io/?${cleanUrl}/api/tags`;
+    const url = `${cleanUrl}/api/tags`;
     try {
       const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(5000) });
       if (!response.ok) throw new Error('Failed to fetch models');
@@ -1214,7 +1214,7 @@ class ChatApp {
     this.downloadModelStatus.className = 'download-model-status';
     const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
     const cleanUrl = baseUrl.replace(/\/$/, '');
-    const url = `https://corsproxy.io/?${cleanUrl}/api/pull`;
+    const url = `${cleanUrl}/api/pull`;
     try {
       const response = await fetch(url, {
         method: 'POST',

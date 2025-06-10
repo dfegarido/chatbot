@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .typing-dots {
+    @apply flex space-x-1;
+  }
+  
+  .typing-dots span {
+    @apply w-2 h-2 bg-gray-400 rounded-full animate-pulse;
+    animation-delay: calc(var(--i) * 0.2s);
+  }
+  
+  .thinking-content {
+    @apply bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-sm text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800;
+  }
+  
+  .code-block {
+    @apply bg-gray-900 dark:bg-gray-800 rounded-lg overflow-hidden;
+  }
+  
+  .code-block-header {
+    @apply bg-gray-800 dark:bg-gray-700 px-4 py-2 text-sm text-gray-300 flex justify-between items-center;
+  }
+  
+  .message-bubble {
+    @apply max-w-3xl mx-auto px-4 py-6;
+  }
+  
+  .message-user {
+    @apply bg-gradient-to-r from-primary-500 to-purple-600 text-white;
+  }
+  
+  .message-assistant {
+    @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+  }
+  
+  .sidebar-collapsed {
+    @apply -translate-x-full lg:translate-x-0 lg:w-16;
+  }
+  
+  .emoji-grid {
+    @apply grid grid-cols-8 gap-2 max-h-48 overflow-y-auto;
+  }
+  
+  .emoji-item {
+    @apply p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer text-lg;
+  }
+}
