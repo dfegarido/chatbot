@@ -112,6 +112,94 @@
     }
   }
 
+  @keyframes bounce-typing-1 {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    20% {
+      transform: translateY(-8px);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounce-typing-2 {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    40% {
+      transform: translateY(-8px);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounce-typing-3 {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    60% {
+      transform: translateY(-8px);
+      opacity: 1;
+    }
+  }
+
+  @keyframes wave-1 {
+    0%, 40%, 100% {
+      transform: scaleY(0.4);
+      opacity: 0.5;
+    }
+    20% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes wave-2 {
+    0%, 40%, 100% {
+      transform: scaleY(0.4);
+      opacity: 0.5;
+    }
+    25% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes wave-3 {
+    0%, 40%, 100% {
+      transform: scaleY(0.4);
+      opacity: 0.5;
+    }
+    30% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes wave-4 {
+    0%, 40%, 100% {
+      transform: scaleY(0.4);
+      opacity: 0.5;
+    }
+    35% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes wave-5 {
+    0%, 40%, 100% {
+      transform: scaleY(0.4);
+      opacity: 0.5;
+    }
+    40% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
   @keyframes fade-in-out {
     0%, 100% {
       opacity: 0.6;
@@ -119,6 +207,65 @@
     50% {
       opacity: 1;
     }
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pulse-gentle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  /* Custom animation utilities */
+  .animate-bounce-typing-1 {
+    animation: bounce-typing-1 1.4s infinite ease-in-out;
+  }
+
+  .animate-bounce-typing-2 {
+    animation: bounce-typing-2 1.4s infinite ease-in-out;
+  }
+
+  .animate-bounce-typing-3 {
+    animation: bounce-typing-3 1.4s infinite ease-in-out;
+  }
+
+  .animate-wave-1 {
+    animation: wave-1 1.2s infinite ease-in-out;
+  }
+
+  .animate-wave-2 {
+    animation: wave-2 1.2s infinite ease-in-out;
+  }
+
+  .animate-wave-3 {
+    animation: wave-3 1.2s infinite ease-in-out;
+  }
+
+  .animate-wave-4 {
+    animation: wave-4 1.2s infinite ease-in-out;
+  }
+
+  .animate-wave-5 {
+    animation: wave-5 1.2s infinite ease-in-out;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  .animate-pulse-gentle {
+    animation: pulse-gentle 2s ease-in-out infinite;
   }
 
   .message-animate {

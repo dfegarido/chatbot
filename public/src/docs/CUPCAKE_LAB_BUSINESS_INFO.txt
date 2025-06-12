@@ -1,0 +1,171 @@
+# CUPCAKE LAB - COMPLETE BUSINESS INFORMATION
+# AI-Friendly Business Context for Sales Assistant
+
+## BUSINESS OVERVIEW
+Business Name: Cupcake Lab
+Industry: Custom Bakery & Dessert Shop
+Specialization: Cupcakes, Custom Cakes, DIY Baking Kits, Desserts
+Target Market: Individual customers, celebrations, events, corporate orders
+
+## CONTACT INFORMATION
+Phone: +639988538586
+Address: #11, 9th Ave, Cubao, QC, Metro Manila, Philippines
+Business Hours: 8:00 AM - 5:00 PM, Monday to Saturday
+Delivery Hours: 9:00 AM - 6:00 PM, Daily (7 days a week)
+
+## PRODUCT CATEGORIES & DETAILS
+
+### 1. REGULAR CUPCAKES
+- Minimum Order: 6 pieces (same flavor)
+- Available Flavors: Red Velvet (signature), Chocolate, Vanilla, Strawberry, Lemon, Carrot
+- Standard Size: Regular cupcakes
+- Pricing: Available upon request
+- Lead Time: 3-5 days for standard orders
+
+### 2. MINI CUPCAKES
+- Minimum Order: 12 pieces (same flavor)
+- Same flavors as regular cupcakes
+- Smaller portion size
+- Perfect for parties and events
+- Lead Time: 3-5 days for standard orders
+
+### 3. CUSTOM CUPCAKES
+- Personalized designs and decorations
+- Custom flavors available
+- Themed cupcakes for special occasions
+- Wedding, birthday, corporate designs
+- Lead Time: 7 days for custom designs
+- Consultation required for complex designs
+
+### 4. BASIC CAKES
+- Round cakes in various sizes
+- Standard flavors available
+- Simple decorations
+- No minimum order requirement
+- Lead Time: 3-5 days for standard orders
+
+### 5. CUSTOM CAKES
+- Fully customized designs
+- Multi-tier options available
+- Wedding cakes, birthday cakes, celebration cakes
+- Fondant work and special decorations
+- Lead Time: 7 days minimum
+- Consultation and design approval required
+
+### 6. DIY BAKING KITS
+- Minimum Order: 5 kits
+- Complete baking sets with ingredients and instructions
+- Great for family activities and gifts
+- Cupcake and cake kits available
+- Lead Time: 3-5 days
+
+### 7. OTHER DESSERTS
+- Chewy cookies
+- Cake tins and baking accessories
+- Seasonal desserts
+- Special occasion treats
+
+### 8. PACKAGES
+- Party packages for events
+- Corporate catering packages
+- Bulk order discounts available
+- Customizable combinations
+
+## ORDERING PROCESS
+
+### Standard Orders (3-5 days lead time)
+1. Customer inquiry
+2. Flavor and quantity selection
+3. Customer information collection
+4. Order confirmation
+5. Production and delivery scheduling
+
+### Custom Orders (7 days lead time)
+1. Initial consultation
+2. Design discussion and approval
+3. Quote and timeline confirmation
+4. Customer information collection
+5. Production scheduling
+6. Quality check and delivery
+
+## REQUIRED CUSTOMER INFORMATION
+- Full Name
+- Phone Number
+- Complete Delivery Address OR Pickup preference
+- Preferred Delivery Date and Time (within 9 AM - 6 PM)
+- Special instructions or requests
+
+## DELIVERY & PICKUP OPTIONS
+
+### Delivery Service
+- Available: 9:00 AM - 6:00 PM daily
+- Coverage: Metro Manila area
+- Delivery fees may apply based on location
+- Same-day delivery not available (minimum lead time applies)
+
+### Pickup Service
+- Location: #11, 9th Ave, Cubao, QC, Metro Manila
+- Available during business hours: 8:00 AM - 5:00 PM (Mon-Sat)
+- Advance notice required (respect lead times)
+
+## PRICING POLICY
+- Prices available upon request
+- Quotes provided based on:
+  - Product type and quantity
+  - Customization level
+  - Delivery requirements
+  - Timeline urgency
+
+## SPECIAL FEATURES
+- Signature Red Velvet cupcakes
+- Custom design capabilities
+- Family-friendly DIY kits
+- Corporate catering services
+- Seasonal and themed products
+- Quality ingredients and fresh preparation
+
+## LEAD TIMES SUMMARY
+- Standard Products: 3-5 days
+- Custom Designs: 7 days minimum
+- DIY Kits: 3-5 days
+- Rush orders: Subject to availability and additional charges
+
+## BUSINESS PHILOSOPHY
+- Quality over quantity
+- Fresh, made-to-order products
+- Customer satisfaction priority
+- Creative and personalized service
+- Supporting life's celebrations
+
+## COMMUNICATION STYLE
+- Friendly and approachable
+- Clear and direct communication
+- No overwhelming with too many options
+- Focus on what customer specifically needs
+- Professional but warm tone
+
+## IMPORTANT BUSINESS RULES
+- Minimum quantities must be respected
+- Lead times are firm requirements
+- Custom designs require consultation
+- Same-day orders generally not possible
+- Quality standards are non-negotiable
+- Customer information is required for all orders
+
+## SEASONAL CONSIDERATIONS
+- Holiday themes available
+- Seasonal flavors may be offered
+- Advance booking recommended for peak seasons
+- Special occasion packages during holidays
+
+## COMPETITIVE ADVANTAGES
+- Specialization in custom work
+- Quality ingredients and presentation
+- Reliable delivery service
+- Comprehensive product range
+- Personal customer service approach
+- Established local presence in Cubao area
+
+---
+Last Updated: June 2025
+This document serves as the complete business context for AI customer service systems.

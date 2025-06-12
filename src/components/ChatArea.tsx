@@ -12,6 +12,9 @@ export function ChatArea() {
 
   const currentChat = state.currentChatId ? state.chats[state.currentChatId] : null;
   const messages = currentChat?.messages || [];
+  
+  // Show typing indicator when either isTyping is true OR when streaming
+  const showTypingIndicator = isTyping || state.isStreaming;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -19,11 +22,11 @@ export function ChatArea() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping, typingMessage]);
+  }, [messages, showTypingIndicator, typingMessage]);
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 custom-scrollbar">
-      {messages.length === 0 && !isTyping ? (
+      {messages.length === 0 && !showTypingIndicator ? (
         <WelcomeMessage />
       ) : (
         <div className="space-y-0">
@@ -33,7 +36,7 @@ export function ChatArea() {
             </div>
           ))}
           
-          {isTyping && (
+          {showTypingIndicator && (
             <div className="message-animate">
               <TypingIndicator message={typingMessage} />
             </div>

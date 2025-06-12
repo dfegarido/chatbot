@@ -38,12 +38,20 @@ export function Message({ message }: MessageProps) {
           {/* Avatar */}
           <div className="flex-shrink-0">
             <div className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shadow-md",
+              "w-8 h-8 rounded-full flex items-center justify-center shadow-md overflow-hidden",
               isUser 
                 ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white" 
-                : "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
+                : "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 border border-gray-300 dark:border-gray-600"
             )}>
-              {isUser ? '👤' : '🤖'}
+              {isUser ? (
+                <span className="text-xs font-semibold">👤</span>
+              ) : (
+                <img 
+                  src="/sarah-avatar.svg" 
+                  alt="Sarah" 
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
           </div>
 
@@ -81,7 +89,7 @@ export function Message({ message }: MessageProps) {
                   ? "prose-invert" 
                   : "dark:prose-invert"
               )}>
-                <MessageContent content={message.content} images={message.images} />
+                <MessageContent content={message.content} />
               </div>
 
               {/* Message tail */}

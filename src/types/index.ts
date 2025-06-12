@@ -4,7 +4,6 @@ export interface Message {
   content: string;
   timestamp: string;
   thinking?: string;
-  images?: string[]; // Array of image URLs or paths
 }
 
 export interface Chat {
@@ -24,8 +23,9 @@ export interface Settings {
   streamResponses: boolean;
   showThinking: boolean;
   theme: 'light' | 'dark';
-  apiProvider: 'ollama' | 'groq';
+  apiProvider: 'ollama' | 'groq' | 'openai';
   groqApiKey: string;
+  openaiApiKey: string;
 }
 
 export interface ApiResponse {
@@ -49,7 +49,7 @@ export interface GroqStreamingResponse {
   }>;
 }
 
-export type ApiProvider = 'ollama' | 'groq';
+export type ApiProvider = 'ollama' | 'groq' | 'openai';
 
 export interface ModelInfo {
   name: string;

@@ -83,7 +83,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   };
 
-  const handleApiProviderChange = (provider: 'ollama' | 'groq') => {
+  const handleApiProviderChange = (provider: 'ollama' | 'groq' | 'openai') => {
     const newSettings = { ...localSettings, apiProvider: provider };
     // Switch to compatible model
     if (provider === 'groq') {
@@ -91,9 +91,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       if (!groqModels.includes(newSettings.model)) {
         newSettings.model = 'llama-3.3-70b-versatile';
       }
+    } else if (provider === 'openai') {
+      const openaiModels = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+      if (!openaiModels.includes(newSettings.model)) {
+        newSettings.model = 'gpt-4';
+      }
     } else {
       const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
-      if (groqModels.includes(newSettings.model)) {
+      const openaiModels = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+      if (groqModels.includes(newSettings.model) || openaiModels.includes(newSettings.model)) {
         newSettings.model = 'llama3.2:latest';
       }
     }
@@ -109,6 +115,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const getModelOptions = () => {
     if (localSettings.apiProvider === 'groq') {
       return ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+    } else if (localSettings.apiProvider === 'openai') {
+      return ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
     }
     return availableModels.length > 0 ? availableModels : ['llama3.2:latest', 'deepseek-coder:1.3b', 'deepseek-r1:8b', 'deepseek-coder-v2:latest'];
   };
@@ -141,11 +149,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </label>
             <select
               value={localSettings.apiProvider}
-              onChange={(e) => handleApiProviderChange(e.target.value as 'ollama' | 'groq')}
+              onChange={(e) => handleApiProviderChange(e.target.value as 'ollama' | 'groq' | 'openai')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="ollama">Ollama (Local)</option>
               <option value="groq">Groq (Cloud)</option>
+              <option value="openai">OpenAI (Cloud)</option>
             </select>
           </div>
 
@@ -193,6 +202,24 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   onChange={(e) => setLocalSettings({ ...localSettings, groqApiKey: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Enter your Groq API key"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* OpenAI Settings */}
+          {localSettings.apiProvider === 'openai' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  OpenAI API Key
+                </label>
+                <input
+                  type="password"
+                  value={localSettings.openaiApiKey}
+                  onChange={(e) => setLocalSettings({ ...localSettings, openaiApiKey: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Enter your OpenAI API key"
                 />
               </div>
             </div>

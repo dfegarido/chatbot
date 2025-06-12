@@ -39,9 +39,47 @@ function TypewriterText({ text, speed = 50, onComplete }: TypewriterTextProps) {
   );
 }
 
+// Modern bouncing dots component
+function BouncingDots() {
+  return (
+    <div className="flex items-center space-x-1">
+      <div className="flex space-x-1">
+        <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-bounce-typing-1"></div>
+        <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-bounce-typing-2"></div>
+        <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-bounce-typing-3"></div>
+      </div>
+    </div>
+  );
+}
+
+// Pulsing wave animation component
+function PulsingWave() {
+  return (
+    <div className="flex items-center space-x-1">
+      <div className="flex space-x-1">
+        <div className="w-1 h-4 bg-blue-500 dark:bg-blue-400 rounded-full animate-wave-1"></div>
+        <div className="w-1 h-4 bg-blue-500 dark:bg-blue-400 rounded-full animate-wave-2"></div>
+        <div className="w-1 h-4 bg-blue-500 dark:bg-blue-400 rounded-full animate-wave-3"></div>
+        <div className="w-1 h-4 bg-blue-500 dark:bg-blue-400 rounded-full animate-wave-4"></div>
+        <div className="w-1 h-4 bg-blue-500 dark:bg-blue-400 rounded-full animate-wave-5"></div>
+      </div>
+    </div>
+  );
+}
+
 export function TypingIndicator({ message, className }: TypingIndicatorProps) {
-  const [currentAnimation, setCurrentAnimation] = useState<'dots' | 'typewriter'>('dots');
+  const [currentAnimation, setCurrentAnimation] = useState<'dots' | 'wave' | 'typewriter'>('dots');
   const [animationMessage, setAnimationMessage] = useState('');
+  const [animationType, setAnimationType] = useState<'dots' | 'wave'>('dots');
+
+  // Alternate between different animation types
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimationType(prev => prev === 'dots' ? 'wave' : 'dots');
+    }, 3000); // Switch animation every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (message && !message.startsWith('Thinking:')) {
@@ -49,17 +87,18 @@ export function TypingIndicator({ message, className }: TypingIndicatorProps) {
       setCurrentAnimation('typewriter');
       setAnimationMessage(message);
     } else {
-      // Use dots animation for thinking or no message
-      setCurrentAnimation('dots');
+      // Use alternating animations for thinking or no message
+      setCurrentAnimation(animationType);
     }
-  }, [message]);
+  }, [message, animationType]);
 
   const renderContent = () => {
     if (message?.startsWith('Thinking:')) {
       return (
-        <div className="thinking-content bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 p-2 rounded-xl text-xs">
-          <div className="flex items-center gap-1 mb-1">
-            <span className="text-xs font-medium opacity-75">💭</span>
+        <div className="thinking-content bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 p-3 rounded-2xl text-sm shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg animate-spin-slow">🧠</span>
+            <span className="text-xs font-medium opacity-75 uppercase tracking-wide">Processing</span>
           </div>
           <TypewriterText 
             text={message.replace('Thinking:', '').trim()} 
@@ -77,46 +116,47 @@ export function TypingIndicator({ message, className }: TypingIndicatorProps) {
       );
     }
 
-    // Default dots animation
+    // Modern typing animations - show only dots, no text
     return (
-      <div className="typing-dots-enhanced">
-        <div className="typing-dots py-1">
-          <span className="dot-1"></span>
-          <span className="dot-2"></span>
-          <span className="dot-3"></span>
-        </div>
-        <span className="typing-text ml-2 text-xs text-gray-500 dark:text-gray-400 animate-pulse">
-          Cupcake Lab is typing...
-        </span>
+      <div className="flex items-center justify-center">
+        {currentAnimation === 'wave' ? <PulsingWave /> : <BouncingDots />}
       </div>
     );
   };
+
   return (
-    <div className={cn("px-4 py-3 bg-white dark:bg-gray-900/50 transition-all duration-200", className)}>
+    <div className={cn("px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm transition-all duration-300 animate-in slide-in-from-bottom-2", className)}>
       <div className="max-w-4xl mx-auto">
         <div className="flex gap-3 items-end">
-          {/* Avatar */}
+          {/* Enhanced Avatar with subtle animation */}
           <div className="flex-shrink-0">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shadow-md bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600">
-              🤖
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900 border-2 border-blue-200 dark:border-blue-700 animate-pulse-gentle overflow-hidden">
+              <img 
+                src="/sarah-avatar.svg" 
+                alt="Sarah" 
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
 
-          {/* Content */}
+          {/* Enhanced Content Bubble */}
           <div className="flex-1 min-w-0">
-            {/* Typing bubble */}
-            <div className="group relative inline-block max-w-xs sm:max-w-md rounded-2xl px-3 py-2 shadow-sm border bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 transition-all duration-200">
+            {/* Modern typing bubble with enhanced styling */}
+            <div className="group relative inline-block max-w-xs sm:max-w-md rounded-2xl px-4 py-3 shadow-lg border bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl">
               {renderContent()}
 
-              {/* Message tail */}
-              <div className="absolute bottom-2 left-[-4px] w-2 h-2 transform rotate-45 bg-white dark:bg-gray-800 border-l border-b border-gray-200 dark:border-gray-700" />
+              {/* Enhanced message tail with gradient */}
+              <div className="absolute bottom-3 left-[-6px] w-3 h-3 transform rotate-45 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-800 border-l border-b border-gray-200 dark:border-gray-700" />
             </div>
 
-            {/* Timestamp */}
-            <div className="flex items-center gap-2 mt-1 px-1">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {currentAnimation === 'typewriter' ? 'responding...' : 'typing...'}
-              </span>
+            {/* Enhanced timestamp with status */}
+            <div className="flex items-center gap-2 mt-2 px-1">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {currentAnimation === 'typewriter' ? 'responding...' : 'online'}
+                </span>
+              </div>
             </div>
           </div>
         </div>

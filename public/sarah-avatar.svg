@@ -1,0 +1,33 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Face -->
+  <circle cx="16" cy="16" r="14" fill="#FDBCB4"/>
+  
+  <!-- Hair -->
+  <path d="M3 16C3 8.5 8.5 3 16 3C23.5 3 29 8.5 29 16C29 12 25 8 16 8C12 8 8 10 6 14C4 15 3 15.5 3 16Z" fill="#8B4513"/>
+  
+  <!-- Eyes -->
+  <circle cx="12" cy="14" r="1.5" fill="#2D3748"/>
+  <circle cx="20" cy="14" r="1.5" fill="#2D3748"/>
+  
+  <!-- Eye highlights -->
+  <circle cx="12.5" cy="13.5" r="0.5" fill="white"/>
+  <circle cx="20.5" cy="13.5" r="0.5" fill="white"/>
+  
+  <!-- Nose -->
+  <ellipse cx="16" cy="17" rx="0.5" ry="1" fill="#F6AD9E"/>
+  
+  <!-- Mouth -->
+  <path d="M14 20C14 21 15 22 16 22C17 22 18 21 18 20" stroke="#E53E3E" stroke-width="1" fill="none" stroke-linecap="round"/>
+  
+  <!-- Cheeks -->
+  <circle cx="10" cy="18" r="1.5" fill="#F6AD9E" opacity="0.6"/>
+  <circle cx="22" cy="18" r="1.5" fill="#F6AD9E" opacity="0.6"/>
+  
+  <!-- Hair details -->
+  <path d="M8 10C10 8 14 7 16 8C18 7 22 8 24 10" stroke="#654321" stroke-width="1" fill="none"/>
+  
+  <!-- Hair bow -->
+  <ellipse cx="20" cy="8" rx="2" ry="1" fill="#E53E3E"/>
+  <ellipse cx="18" cy="8" rx="2" ry="1" fill="#E53E3E"/>
+  <circle cx="19" cy="8" r="0.5" fill="#C53030"/>
+</svg>

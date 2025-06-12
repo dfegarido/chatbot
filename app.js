@@ -1120,7 +1120,7 @@ class ChatApp {
 
   async testGroqConnection() {
     try {
-      const apiKey = this.groqApiKeyInput.value.trim() || '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'; // Fallback key
+      const apiKey = this.groqApiKeyInput.value.trim() ; // Fallback key
       if (!apiKey) {
         return { success: false, message: 'Please enter your Groq API key' };
       }

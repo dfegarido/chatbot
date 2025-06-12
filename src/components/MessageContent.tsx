@@ -8,10 +8,9 @@ import { copyToClipboard, removeThinkingBlocks } from '@/utils';
 
 interface MessageContentProps {
   content: string;
-  images?: string[];
 }
 
-export function MessageContent({ content, images }: MessageContentProps) {
+export function MessageContent({ content }: MessageContentProps) {
   const { state } = useChat();
   const [copiedBlocks, setCopiedBlocks] = React.useState<Set<string>>(new Set());
 
@@ -151,31 +150,6 @@ export function MessageContent({ content, images }: MessageContentProps) {
       >
         {cleanContent}
       </ReactMarkdown>
-      
-      {/* Display images if present */}
-      {images && images.length > 0 && (
-        <div className="mt-3 space-y-2">
-          {images.map((imagePath, index) => (
-            <div key={index} className="relative group">
-              <img
-                src={imagePath}
-                alt={`Image ${index + 1}`}
-                className="max-w-full h-auto rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-                loading="lazy"
-                onClick={() => {
-                  // Open image in new tab for full view
-                  window.open(imagePath, '_blank');
-                }}
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <span className="text-white bg-black bg-opacity-50 px-2 py-1 rounded text-sm">
-                  Click to view full size
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </>
   );
 }

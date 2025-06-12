@@ -5,9 +5,13 @@ export class ChatApiService {
 
   validateConfiguration(): string | null {
     if (this.settings.apiProvider === 'groq') {
-      const apiKey = this.settings.groqApiKey || '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';
+      const apiKey = this.settings.groqApiKey;
       if (!apiKey || apiKey.trim() === '') {
         return 'Please configure your Groq API key in settings before sending messages.';
+      }
+    } else if (this.settings.apiProvider === 'openai') {
+      if (!this.settings.openaiApiKey || this.settings.openaiApiKey.trim() === '') {
+        return 'Please configure your OpenAI API key in settings before sending messages.';
       }
     } else {
       if (!this.settings.ollamaUrl || this.settings.ollamaUrl.trim() === '') {
@@ -20,6 +24,8 @@ export class ChatApiService {
   getApiUrl(): string {
     if (this.settings.apiProvider === 'groq') {
       return 'https://api.groq.com/openai/v1/chat/completions';
+    } else if (this.settings.apiProvider === 'openai') {
+      return 'https://api.openai.com/v1/chat/completions';
     } else {
       const baseUrl = this.settings.ollamaUrl || 'http://localhost:11434';
       const cleanUrl = baseUrl.replace(/\/$/, '');
@@ -29,10 +35,15 @@ export class ChatApiService {
 
   getApiHeaders(): Record<string, string> {
     if (this.settings.apiProvider === 'groq') {
-      const apiKey = this.settings.groqApiKey || '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';
+      const apiKey = this.settings.groqApiKey;
       return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
+      };
+    } else if (this.settings.apiProvider === 'openai') {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.settings.openaiApiKey}`
       };
     } else {
       return { 'Content-Type': 'application/json' };
@@ -44,7 +55,19 @@ export class ChatApiService {
       const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
       const modelToUse = groqModels.includes(this.settings.model) ? this.settings.model : 'llama-3.3-70b-versatile';
       
-      const messages = this.buildGroqMessages(message, chatHistory);
+      const messages = this.buildChatMessages(message, chatHistory);
+      return {
+        model: modelToUse,
+        messages: messages,
+        temperature: this.settings.temperature,
+        max_tokens: this.settings.maxTokens,
+        stream: this.settings.streamResponses
+      };
+    } else if (this.settings.apiProvider === 'openai') {
+      const openaiModels = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+      const modelToUse = openaiModels.includes(this.settings.model) ? this.settings.model : 'gpt-4';
+      
+      const messages = this.buildChatMessages(message, chatHistory);
       return {
         model: modelToUse,
         messages: messages,
@@ -54,7 +77,8 @@ export class ChatApiService {
       };
     } else {
       const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
-      const modelToUse = groqModels.includes(this.settings.model) ? 'llama3.2:latest' : this.settings.model;
+      const openaiModels = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+      const modelToUse = (groqModels.includes(this.settings.model) || openaiModels.includes(this.settings.model)) ? 'llama3.2:latest' : this.settings.model;
       
       return {
         model: modelToUse,
@@ -68,29 +92,25 @@ export class ChatApiService {
     }
   }
 
-  private buildGroqMessages(message: string, chatHistory: Message[]): any[] {
+  private buildChatMessages(message: string, chatHistory: Message[]): any[] {
     const messages = [];
     
-    // Check if there are product details to include
-    const productDetails = (window as any).__tempProductDetails;
+    // Check if there's uploaded business information
+    const businessInfo = (window as any).__businessInfo;
+    
     let systemPrompt = this.settings.systemPrompt;
     
-    if (productDetails && productDetails.length > 0) {
-      const productContext = `
+    // Add uploaded business information if available
+    if (businessInfo && businessInfo.content) {
+      const businessContext = `
 
-[AVAILABLE_PRODUCT_INFORMATION - Use this data to answer product-related questions:]
-${productDetails.map((img: any) => `
-- PRODUCT: ${img.description}
-- CATEGORY: ${img.category}
-- KEYWORDS: ${img.keywords.join(', ')}
-- PRICING: ${JSON.stringify(img.prices, null, 2)}
-- IMAGE: ${img.filename}
-`).join('')}
-[END_PRODUCT_INFORMATION]
+[UPLOADED_BUSINESS_INFORMATION - Use this data to answer business-related questions:]
+${businessInfo.content}
+[END_BUSINESS_INFORMATION]
 
-When users ask about products, pricing, or related information, use the data above to provide accurate, specific details. Keep responses concise and focused on what the user actually asked.`;
+When users ask about the business, products, pricing, services, or related information, use the data above to provide accurate, specific details. Keep responses concise and focused on what the user actually asked.`;
       
-      systemPrompt += productContext;
+      systemPrompt += businessContext;
     }
     
     if (systemPrompt) {
@@ -119,25 +139,20 @@ When users ask about products, pricing, or related information, use the data abo
   private buildPrompt(message: string, chatHistory: Message[]): string {
     let systemPrompt = this.settings.systemPrompt || "You are a helpful AI assistant.";
     
-    // Check if there are product details to include
-    const productDetails = (window as any).__tempProductDetails;
+    // Check if there's uploaded business information
+    const businessInfo = (window as any).__businessInfo;
     
-    if (productDetails && productDetails.length > 0) {
-      const productContext = `
+    // Add uploaded business information if available
+    if (businessInfo && businessInfo.content) {
+      const businessContext = `
 
-[AVAILABLE_PRODUCT_INFORMATION - Use this data to answer product-related questions:]
-${productDetails.map((img: any) => `
-- PRODUCT: ${img.description}
-- CATEGORY: ${img.category}
-- KEYWORDS: ${img.keywords.join(', ')}
-- PRICING: ${JSON.stringify(img.prices, null, 2)}
-- IMAGE: ${img.filename}
-`).join('')}
-[END_PRODUCT_INFORMATION]
+[UPLOADED_BUSINESS_INFORMATION - Use this data to answer business-related questions:]
+${businessInfo.content}
+[END_BUSINESS_INFORMATION]
 
-When users ask about products, pricing, or related information, use the data above to provide accurate, specific details. Keep responses concise and focused on what the user actually asked.`;
+When users ask about the business, products, pricing, services, or related information, use the data above to provide accurate, specific details. Keep responses concise and focused on what the user actually asked.`;
       
-      systemPrompt += productContext;
+      systemPrompt += businessContext;
     }
     
     let prompt = systemPrompt + "\n\n";
@@ -154,6 +169,8 @@ When users ask about products, pricing, or related information, use the data abo
   async testConnection(): Promise<ApiResponse> {
     if (this.settings.apiProvider === 'groq') {
       return this.testGroqConnection();
+    } else if (this.settings.apiProvider === 'openai') {
+      return this.testOpenAIConnection();
     } else {
       return this.testOllamaConnection();
     }
@@ -181,9 +198,38 @@ When users ask about products, pricing, or related information, use the data abo
     }
   }
 
+  private async testOpenAIConnection(): Promise<ApiResponse> {
+    try {
+      if (!this.settings.openaiApiKey) {
+        return { success: false, message: 'Please enter your OpenAI API key' };
+      }
+      
+      const response = await fetch('https://api.openai.com/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.settings.openaiApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (response.ok) {
+        return { success: true, message: 'Connected successfully to OpenAI API' };
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        return { success: false, message: `API Error: ${errorData.error?.message || response.statusText}` };
+      }
+    } catch (error: any) {
+      if (error.name === 'TimeoutError') {
+        return { success: false, message: 'Connection timeout - check your internet connection' };
+      }
+      return { success: false, message: `Connection failed: ${error.message}` };
+    }
+  }
+
   private async testGroqConnection(): Promise<ApiResponse> {
     try {
-      const apiKey = this.settings.groqApiKey || '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';
+      const apiKey = this.settings.groqApiKey;
       if (!apiKey) {
         return { success: false, message: 'Please enter your Groq API key' };
       }
@@ -214,6 +260,8 @@ When users ask about products, pricing, or related information, use the data abo
   async fetchModels(): Promise<string[]> {
     if (this.settings.apiProvider === 'groq') {
       return ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+    } else if (this.settings.apiProvider === 'openai') {
+      return ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
     }
     
     try {
@@ -252,6 +300,16 @@ When users ask about products, pricing, or related information, use the data abo
         return `${baseMessage} Rate limit exceeded. Please try again later.`;
       } else if (error.message.includes('404') && error.message.includes('model')) {
         return `${baseMessage} The selected model is not available on Groq. Please select a different model.`;
+      }
+    } else if (this.settings.apiProvider === 'openai') {
+      if (error.message.includes('401')) {
+        return `${baseMessage} Please check your OpenAI API key in settings.`;
+      } else if (error.message.includes('429')) {
+        return `${baseMessage} Rate limit exceeded. Please try again later.`;
+      } else if (error.message.includes('404') && error.message.includes('model')) {
+        return `${baseMessage} The selected model is not available on OpenAI. Please select a different model.`;
+      } else if (error.message.includes('insufficient_quota')) {
+        return `${baseMessage} OpenAI API quota exceeded. Please check your billing settings.`;
       }
     } else {
       if (error.message.includes('fetch')) {

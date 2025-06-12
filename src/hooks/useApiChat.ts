@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { ChatApiService } from '@/services/api';
-import { ImageMatchingService } from '@/services/imageMatching';
 import { useChat } from '@/contexts/ChatContext';
 import { Message } from '@/types';
 
@@ -14,7 +13,7 @@ export function useApiChat() {
     const typingMessages = [
       '',
       'Thinking about your request...',
-      'Looking through our cupcake menu...',
+      'Looking through our information...',
       'Preparing your response...',
       'Just a moment...'
     ];
@@ -31,19 +30,85 @@ export function useApiChat() {
     return () => clearInterval(typingInterval);
   }, []);
 
+  // Split text into sentences and send them with random delays
+  const sendSentencesWithDelay = useCallback(async (text: string, baseMessageId: string) => {
+    // Split text into sentences using regex that handles common punctuation
+    const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
+    
+    // Filter out empty sentences and trim whitespace
+    const validSentences = sentences
+      .map(sentence => sentence.trim())
+      .filter(sentence => sentence.length > 0);
+
+    // Sarah's emoticons - only face expressions and hearts
+    const emoticons = {
+      happy: ['😊', '😄', '🙂', '😌'],
+      excited: ['😍', '🤩', '😆'],
+      grateful: ['😇', '☺️'],
+      love: ['💖', '💕', '❤️']
+    };
+
+    // Function to get a random emoticon based on text content (only when really appropriate)
+    const getEmoticon = (sentence: string) => {
+      const lowerSentence = sentence.toLowerCase();
+      
+      // Only add emoticons for very specific, emotionally charged contexts
+      if (lowerSentence.includes('welcome') || lowerSentence.includes('hello') || lowerSentence.includes('nice to meet')) {
+        return emoticons.happy[Math.floor(Math.random() * emoticons.happy.length)];
+      } else if (lowerSentence.includes('amazing') || lowerSentence.includes('wonderful') || lowerSentence.includes('fantastic') || lowerSentence.includes('perfect') || lowerSentence.includes('love it')) {
+        return emoticons.excited[Math.floor(Math.random() * emoticons.excited.length)];
+      } else if (lowerSentence.includes('congratulations') || lowerSentence.includes('great choice') || lowerSentence.includes('excellent')) {
+        return emoticons.excited[Math.floor(Math.random() * emoticons.excited.length)];
+      } else if (lowerSentence.includes('thank you') || lowerSentence.includes('thanks') || lowerSentence.includes('appreciate')) {
+        return emoticons.grateful[Math.floor(Math.random() * emoticons.grateful.length)];
+      } else if (lowerSentence.includes('love') || lowerSentence.includes('adore') || lowerSentence.includes('treasure')) {
+        return emoticons.love[Math.floor(Math.random() * emoticons.love.length)];
+      }
+      
+      // No emoticon for most regular responses
+      return '';
+    };
+
+    if (validSentences.length <= 1) {
+      // If only one sentence or no sentences, send as single message
+      const emoticon = getEmoticon(text);
+      const assistantMessage: Message = {
+        id: baseMessageId,
+        role: 'assistant',
+        content: emoticon ? `${text} ${emoticon}` : text,
+        timestamp: new Date().toISOString()
+      };
+      
+      dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId!, message: assistantMessage } });
+      return;
+    }
+
+    // Send each sentence as a separate message with random delays
+    for (let i = 0; i < validSentences.length; i++) {
+      const sentence = validSentences[i];
+      
+      // Add random delay between 3-5 seconds (except for first sentence)
+      if (i > 0) {
+        const delay = Math.random() * 2000 + 3000; // 3000ms to 5000ms
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+
+      // Only add emoticon to sentences that really warrant it (much more selective)
+      const emoticon = getEmoticon(sentence);
+
+      const assistantMessage: Message = {
+        id: `${baseMessageId}_sentence_${i}`,
+        role: 'assistant',
+        content: emoticon ? `${sentence} ${emoticon}` : sentence,
+        timestamp: new Date().toISOString()
+      };
+      
+      dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId!, message: assistantMessage } });
+    }
+  }, [state.currentChatId, dispatch]);
+
   const sendMessage = useCallback(async (content: string) => {
     if (!state.currentChatId || state.isStreaming) return;
-
-    const imageService = new ImageMatchingService();
-    let imageResponse = null;
-    const isImageRequest = imageService.isImageRequest(content);
-    const isProductSpecificQuery = imageService.isProductSpecificQuery(content);
-    if (isImageRequest || isProductSpecificQuery) {
-      imageResponse = imageService.answerProductQuestion(content);
-      if (!imageResponse) {
-        imageResponse = imageService.generateImageResponse(content);
-      }
-    }
 
     // Create user message
     const userMessage: Message = {
@@ -56,31 +121,20 @@ export function useApiChat() {
     // Add user message
     dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId, message: userMessage } });
 
-    // Only include product context if we have relevant images and the query is product-related
-    if (imageResponse && (isImageRequest || isProductSpecificQuery)) {
-      // Get detailed image information for AI processing
-      const relevantImages = imageService.findRelevantImages(content, 5);
-      const imageDetails = relevantImages.map(img => ({
-        description: img.description,
-        category: img.category,
-        keywords: img.keywords,
-        prices: img.prices,
-        filename: img.filename
-      }));
+    // Show typing indicator immediately
+    setIsTyping(true);
+    setTypingMessage('');
 
-      // Store both image response and product details for the API to use
-      (window as any).__tempImageResponse = imageResponse;
-      (window as any).__tempProductDetails = imageDetails;
-    } else {
-      (window as any).__tempImageResponse = undefined;
-      (window as any).__tempProductDetails = undefined;
-    }
+    // Add a 3-second delay to make conversation feel more natural
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     const apiService = new ChatApiService(state.settings);
     
     // Validate configuration
     const validationError = apiService.validateConfiguration();
     if (validationError) {
+      setIsTyping(false);
+      setTypingMessage('');
       throw new Error(validationError);
     }
 
@@ -112,7 +166,7 @@ export function useApiChat() {
       setIsTyping(false);
       setTypingMessage('');
     }
-  }, [state, dispatch]);
+  }, [state, dispatch, sendSentencesWithDelay]);
 
   const handleStreamingResponse = async (
     apiService: ChatApiService, 
@@ -120,8 +174,7 @@ export function useApiChat() {
     chatHistory: Message[]
   ) => {
     setIsTyping(true);
-    setTypingMessage('Processing your request...');
-    const imageService = new ImageMatchingService();
+    setTypingMessage('');
     
     try {
       const response = await fetch(apiService.getApiUrl(), {
@@ -140,8 +193,8 @@ export function useApiChat() {
       let fullResponse = '';
       let lastThought = '';
       
-      if (state.settings.apiProvider === 'groq') {
-        // Handle Groq streaming format
+      if (state.settings.apiProvider === 'groq' || state.settings.apiProvider === 'openai') {
+        // Handle Groq and OpenAI streaming format (both use Server-Sent Events)
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -198,26 +251,9 @@ export function useApiChat() {
         }
       }
       
-      // Check if we have stored image response for this query
-      const storedImageResponse = (window as any).__tempImageResponse;
-      let imagesToSend = undefined;
-      if (imageService.isImageRequest(message) || imageService.isProductSpecificQuery(message)) {
-        imagesToSend = storedImageResponse?.images || undefined;
-      }
-      // Create assistant message
-      const assistantMessage: Message = {
-        id: `msg_${Date.now()}_assistant`,
-        role: 'assistant',
-        content: fullResponse,
-        timestamp: new Date().toISOString(),
-        images: imagesToSend
-      };
-      
-      // Clear stored data
-      (window as any).__tempImageResponse = undefined;
-      (window as any).__tempProductDetails = undefined;
-      
-      dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId!, message: assistantMessage } });
+      // Create assistant message with sentence splitting
+      const baseMessageId = `msg_${Date.now()}_assistant`;
+      await sendSentencesWithDelay(fullResponse, baseMessageId);
     } finally {
       setIsTyping(false);
       setTypingMessage('');
@@ -230,7 +266,6 @@ export function useApiChat() {
     chatHistory: Message[]
   ) => {
     setIsTyping(true);
-    const imageService = new ImageMatchingService();
     
     // Start typing simulation
     const clearTyping = await simulateTyping(3000);
@@ -252,11 +287,11 @@ export function useApiChat() {
       let assistantResponse: string;
       let thinkingContent: string | null = null;
       
-      if (state.settings.apiProvider === 'groq') {
+      if (state.settings.apiProvider === 'groq' || state.settings.apiProvider === 'openai') {
         if (data.choices && data.choices.length > 0) {
           assistantResponse = data.choices[0].message.content;
         } else {
-          throw new Error('Invalid response format from Groq API');
+          throw new Error(`Invalid response format from ${state.settings.apiProvider.toUpperCase()} API`);
         }
       } else {
         assistantResponse = data.response || 'No response received.';
@@ -268,27 +303,10 @@ export function useApiChat() {
         setTypingMessage(`Thinking: ${thinkingContent}`);
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
-      
-      // Check if we have stored image response for this query
-      const storedImageResponse = (window as any).__tempImageResponse;
-      let imagesToSend = undefined;
-      if (imageService.isImageRequest(message) || imageService.isProductSpecificQuery(message)) {
-        imagesToSend = storedImageResponse?.images || undefined;
-      }
-      const assistantMessage: Message = {
-        id: `msg_${Date.now()}_assistant`,
-        role: 'assistant',
-        content: assistantResponse,
-        timestamp: new Date().toISOString(),
-        thinking: thinkingContent || undefined,
-        images: imagesToSend
-      };
-      
-      // Clear stored data
-      (window as any).__tempImageResponse = undefined;
-      (window as any).__tempProductDetails = undefined;
-      
-      dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId!, message: assistantMessage } });
+
+      // Send response with sentence splitting
+      const baseMessageId = `msg_${Date.now()}_assistant`;
+      await sendSentencesWithDelay(assistantResponse, baseMessageId);
     } finally {
       setIsTyping(false);
       setTypingMessage('');

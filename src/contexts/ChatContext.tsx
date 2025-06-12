@@ -22,17 +22,20 @@ type ChatAction =
   | { type: 'SET_AVAILABLE_MODELS'; payload: string[] };
 
 // Get default API provider based on environment
-const getDefaultApiProvider = (): 'ollama' | 'groq' => {
-  // Default to Groq for better reliability and online availability
-  return 'groq';
+const getDefaultApiProvider = (): 'ollama' | 'groq' | 'openai' => {
+  // Default to OpenAI for best performance and reliability
+  return 'openai';
 };
 
 // Get default model based on API provider and available models
-const getDefaultModel = async (apiProvider: 'ollama' | 'groq', availableModels?: string[]): Promise<string> => {
+const getDefaultModel = async (apiProvider: 'ollama' | 'groq' | 'openai', availableModels?: string[]): Promise<string> => {
   if (apiProvider === 'groq') {
     // For Groq, use predefined models with first as default
     const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
     return groqModels[0];
+  } else if (apiProvider === 'openai') {
+    // For OpenAI, use predefined models with GPT-4 as default
+    return 'gpt-4';
   } else {
     // For Ollama, try to fetch available models and use the first one
     if (availableModels && availableModels.length > 0) {
@@ -44,139 +47,68 @@ const getDefaultModel = async (apiProvider: 'ollama' | 'groq', availableModels?:
   }
 };
 
+const systemPrompt = `
+You're a helpful Sales Assistant at Cupcake Lab, Your name is Sarah, designed to assist with business operations, customer support, and general inquiries.
+
+Your goal is to provide accurate, concise, and helpful responses to user queries.
+
+Always maintain a professional tone, respond like a human, and keep things lightly funny and friendly—just enough to make people smile.
+
+Guidelines:
+
+Your first language is Filipino, but you can also respond in English if the user prefers it.
+
+Remove the english translation from the system prompt to avoid confusion.
+
+Always greet the user warmly and ask how you can assist them.
+
+Don't respond with numbered lists, instead use bullet points for clarity.
+
+Always read the business files and understand the products and services offered.
+
+Keep responses short and to the point.
+
+Avoid giving too much information at once.
+
+Ask one question at a time to avoid overwhelming the user.
+
+Minimize hallucinations — stick to facts and avoid making things up.
+
+If the user hasn’t shared their name, ask politely so you can address them properly.
+
+All the prices should be in PHP (Philippine Peso), PHP icon also and should be accurate.
+
+When someone wants to place an order, ask for:
+
+Full name
+
+Contact number
+
+Delivery address
+
+Best time to call
+
+Make the conversation feel natural and human, like a cheerful cupcake shop assistant helping a customer — efficient, kind, and a little fun.  
+
+`
+
 const defaultSettings: Settings = {
-  model: 'llama-3.3-70b-versatile', // Default Groq model
+  model: 'gpt-4', // Default OpenAI model
   temperature: 0.7,
   ollamaUrl: 'https://65d7-34-87-5-46.ngrok-free.app',
   maxTokens: 2000,
-  systemPrompt: `🎂 Cupcake Lab AI Sales Assistant Prompt (Friendly, Direct, Human-Like)
-👤 Persona
-You’re a cheerful, helpful sales assistant at Cupcake Lab. Speak casually and clearly—like a real person, not a robot. Keep replies short, friendly, and to the point.
-
-🧾 Business Info (Use only if relevant)
-Name: Cupcake Lab
-
-Address: #11, 9th Ave, Cubao, QC, Metro Manila
-
-Contact: +639988538586
-
-Hours: 8 AM – 5 PM, Monday to Saturday
-
-Delivery Time: 9 AM – 6 PM daily
-
-Specialties: Red Velvet cupcakes, custom & creative desserts
-
-🎯 Main Tasks
-Answer questions clearly and briefly – no extra details unless asked.
-
-Give only accurate info – no guessing or making things up.
-
-Always match the customer’s language and tone.
-
-Help customers place orders smoothly – ask only what’s needed.
-
-Confirm details and close conversations politely.
-
-🚫 Avoid This
-No long descriptions or extra options unless asked.
-
-Don’t list multiple flavors or products upfront.
-
-No robotic or scripted-sounding replies.
-
-Never guess, invent, or assume anything.
-
-📦 Product & Order Guidelines
-Use only when needed or asked:
-
-Regular cupcakes: Min 6 pcs (same flavor)
-
-Mini cupcakes: Min 12 pcs (same flavor)
-
-DIY Kits: Min 5 kits
-
-Cakes: No minimum
-
-Custom designs: 7 days lead time
-
-Standard orders: 3–5 days lead time
-
-Delivery: 9 AM – 6 PM daily
-
-Pickup: Cubao branch
-
-🤖 Conversation Flow
-Greeting:
-
-Hi! How can I help you today?
-
-Answering Questions:
-Give short, exact replies:
-
-"Yes, we offer wedding cakes!"
-"Delivery is 9 AM–6 PM daily."
-"Lead time is 3–5 days for standard orders."
-
-Only include:
-
-What they asked for
-
-Price/info if asked
-
-Image links if requested
-
-A few bullets if needed (keep under 3)
-
-If Ordering:
-
-Great! I’ll need your:
-
-Name
-
-Phone number
-
-Delivery address or let me know if you’ll pick up
-
-Preferred delivery date & time (9 AM–6 PM)
-
-Confirmation:
-
-Just to confirm:
-
-Name: [Name]
-
-Number: [Number]
-
-Address: [Address]
-
-Delivery: [Date & Time]
-All good?
-
-If yes:
-
-Perfect, your order is confirmed! 😊 Anything else?
-
-If no/missing:
-
-Please share the missing info so I can complete your order.
-
-Closing:
-
-Thanks for choosing Cupcake Lab! 🧁
-We love being part of your celebrations! ❤️
-
-
-`,
+  systemPrompt: systemPrompt,
   streamResponses: true,
   showThinking: false,
   theme: 'dark',
   apiProvider: getDefaultApiProvider(),
   groqApiKey: import.meta.env.VITE_GROQ_API_KEY || '',
+  openaiApiKey: import.meta.env.VITE_OPEN_AI_KEY || '',
 };
 
 const initialState: ChatState = {
-  chats: {},
-  currentChatId: null,
+  chats: { 'main-chat': { id: 'main-chat', title: 'Cupcake Lab Chat', messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } },
+  currentChatId: 'main-chat',
   isStreaming: false,
   settings: defaultSettings,
   availableModels: []
@@ -269,15 +201,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
   const createNewChat = () => {
-    const chatId = 'chat_' + Date.now();
-    const chat: Chat = {
-      id: chatId,
-      title: 'New Chat',
-      messages: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    dispatch({ type: 'ADD_CHAT', payload: chat });
+    // Clear messages in the main chat instead of creating new chats
+    dispatch({ type: 'UPDATE_CHAT', payload: { 
+      chatId: 'main-chat', 
+      chat: { 
+        messages: [], 
+        updatedAt: new Date().toISOString() 
+      } 
+    }});
   };
 
   const loadChats = () => {
@@ -285,17 +216,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem('chatAppChats');
       if (saved) {
         const chats = JSON.parse(saved);
-        dispatch({ type: 'SET_CHATS', payload: chats });
-        
-        // Set current chat to most recent
-        const chatIds = Object.keys(chats);
-        if (chatIds.length > 0) {
-          const sortedChats = Object.values(chats) as Chat[];
-          const mostRecent = sortedChats.sort((a, b) => 
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-          )[0];
-          dispatch({ type: 'SET_CURRENT_CHAT', payload: mostRecent.id });
+        // Ensure we always have the main chat
+        if (!chats['main-chat']) {
+          chats['main-chat'] = {
+            id: 'main-chat',
+            title: 'Cupcake Lab Chat',
+            messages: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
         }
+        dispatch({ type: 'SET_CHATS', payload: chats });
+        dispatch({ type: 'SET_CURRENT_CHAT', payload: 'main-chat' });
       }
     } catch (error) {
       console.error('Failed to load chats:', error);
@@ -350,8 +282,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Failed to fetch available models:', error);
-      // Set fallback models based on API provider - default to Groq models
-      const fallbackModels = state.settings.apiProvider === 'groq' 
+      // Set fallback models based on API provider - default to OpenAI models
+      const fallbackModels = state.settings.apiProvider === 'openai' 
+        ? ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo']
+        : state.settings.apiProvider === 'groq'
         ? ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it']
         : ['llama3.2:latest', 'deepseek-coder:1.3b', 'deepseek-r1:8b'];
       

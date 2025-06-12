@@ -1,0 +1,246 @@
+# CUPCAKE LAB - COMPLETE BUSINESS INFORMATION WITH DETAILED PRICING
+# AI-Friendly Business Context for Sales Assistant
+
+## BUSINESS OVERVIEW
+Business Name: Cupcake Lab
+Industry: Custom Bakery & Dessert Shop
+Specialization: Cupcakes, Custom Cakes, DIY Baking Kits, Desserts
+Target Market: Individual customers, celebrations, events, corporate orders
+
+## CONTACT INFORMATION
+Phone: +639988538586
+Address: #11, 9th Ave, Cubao, QC, Metro Manila, Philippines
+Business Hours: 8:00 AM - 5:00 PM, Monday to Saturday
+Delivery Hours: 9:00 AM - 6:00 PM, Daily (7 days a week)
+
+## PRODUCT CATEGORIES & DETAILED PRICING
+
+### 1. REGULAR CUPCAKES
+- Minimum Order: 6 pieces (same flavor)
+- Available Flavors: Red Velvet (signature), Chocolate, Vanilla, Strawberry, Lemon, Carrot
+- Standard Size: Regular cupcakes
+- PRICING:
+  * 6 pieces: ₱450 ($8.00)
+  * 12 pieces: ₱850 ($15.00)
+  * 24 pieces: ₱1,600 ($28.50)
+  * 36 pieces: ₱2,250 ($40.00)
+  * 48 pieces: ₱2,900 ($51.50)
+  * Bulk orders (60+ pieces): ₱55 per piece ($1.00)
+- Lead Time: 3-5 days for standard orders
+
+### 2. MINI CUPCAKES
+- Minimum Order: 12 pieces (same flavor)
+- Same flavors as regular cupcakes
+- Smaller portion size - perfect for parties and events
+- PRICING:
+  * 12 pieces: ₱480 ($8.50)
+  * 24 pieces: ₱900 ($16.00)
+  * 36 pieces: ₱1,280 ($22.50)
+  * 48 pieces: ₱1,650 ($29.00)
+  * 60 pieces: ₱2,000 ($35.50)
+  * Bulk orders (72+ pieces): ₱32 per piece ($0.57)
+- Lead Time: 3-5 days for standard orders
+
+### 3. CUSTOM CUPCAKES
+- Personalized designs and decorations
+- Custom flavors available
+- Themed cupcakes for special occasions
+- Wedding, birthday, corporate designs
+- PRICING:
+  * Simple custom design (6 pieces): ₱650 ($11.50)
+  * Medium complexity (6 pieces): ₱850 ($15.00)
+  * Complex design (6 pieces): ₱1,200 ($21.00)
+  * Wedding cupcakes (per piece): ₱120-180 ($2.15-3.20)
+  * Corporate themed (per piece): ₱95-150 ($1.70-2.65)
+  * Character designs (per piece): ₱150-220 ($2.65-3.90)
+- Lead Time: 7 days for custom designs
+- Consultation required for complex designs
+
+### 4. BASIC CAKES
+- Round cakes in various sizes
+- Standard flavors available
+- Simple decorations
+- No minimum order requirement
+- PRICING:
+  * 6-inch round cake: ₱850 ($15.00)
+  * 8-inch round cake: ₱1,200 ($21.00)
+  * 10-inch round cake: ₱1,800 ($32.00)
+  * 12-inch round cake: ₱2,500 ($44.50)
+  * Sheet cake (9x13): ₱1,400 ($25.00)
+  * Sheet cake (12x18): ₱2,200 ($39.00)
+- Lead Time: 3-5 days for standard orders
+
+### 5. CUSTOM CAKES
+- Fully customized designs
+- Multi-tier options available
+- Wedding cakes, birthday cakes, celebration cakes
+- Fondant work and special decorations
+- PRICING:
+  * Single tier custom (6-inch): ₱1,500 ($26.50)
+  * Single tier custom (8-inch): ₱2,200 ($39.00)
+  * Single tier custom (10-inch): ₱3,200 ($57.00)
+  * Two-tier wedding cake: ₱4,500-8,000 ($80-142)
+  * Three-tier wedding cake: ₱8,000-15,000 ($142-267)
+  * Fondant work (additional): ₱500-1,500 ($9-27)
+  * Sugar flowers (per piece): ₱150-300 ($2.65-5.35)
+  * Edible images: ₱200-500 ($3.55-8.90)
+- Lead Time: 7 days minimum
+- Consultation and design approval required
+
+### 6. DIY BAKING KITS
+- Minimum Order: 5 kits
+- Complete baking sets with ingredients and instructions
+- Great for family activities and gifts
+- PRICING:
+  * Cupcake DIY Kit (makes 12): ₱380 ($6.75)
+  * Cake DIY Kit (6-inch): ₱450 ($8.00)
+  * Premium DIY Kit (includes decorating): ₱650 ($11.50)
+  * Family Pack (makes 24 cupcakes): ₱720 ($12.75)
+  * Corporate Team Building Kit: ₱2,500 ($44.50)
+- Lead Time: 3-5 days
+
+### 7. OTHER DESSERTS
+- CHEWY COOKIES:
+  * 12 pieces: ₱320 ($5.70)
+  * 24 pieces: ₱600 ($10.65)
+  * Custom decorated cookies (per piece): ₱45-85 ($0.80-1.50)
+- CAKE TINS & ACCESSORIES:
+  * Basic cake tin: ₱250 ($4.45)
+  * Decorating tools set: ₱450 ($8.00)
+  * Premium baking accessories: ₱800 ($14.25)
+- SEASONAL DESSERTS:
+  * Holiday-themed cupcakes: ₱85-120 per piece ($1.50-2.15)
+  * Seasonal cake pops: ₱65 per piece ($1.15)
+
+### 8. PACKAGES & BUNDLES
+- PARTY PACKAGES:
+  * Small Party (24 mini cupcakes + decorations): ₱1,200 ($21.00)
+  * Medium Party (36 regular cupcakes + cake): ₱2,800 ($49.50)
+  * Large Party (48 cupcakes + custom cake): ₱4,500 ($80.00)
+  * Premium Party Package: ₱6,500 ($115.50)
+- CORPORATE PACKAGES:
+  * Office Meeting (24 mini cupcakes): ₱1,100 ($19.50)
+  * Corporate Event (60 cupcakes + cake): ₱4,200 ($74.50)
+  * Company Celebration: ₱7,500 ($133.50)
+- WEDDING PACKAGES:
+  * Basic Wedding (100 cupcakes + small cake): ₱8,500 ($151.00)
+  * Premium Wedding (custom cake + 150 cupcakes): ₱15,000 ($267.00)
+  * Luxury Wedding Package: ₱25,000+ ($445.00+)
+
+## DELIVERY & PICKUP PRICING
+
+### Delivery Fees (Metro Manila)
+- Within Cubao area: FREE for orders ₱1,500+ ($26.50+)
+- Quezon City: ₱150 ($2.65)
+- Manila/Makati/Pasig: ₱250 ($4.45)
+- Other Metro Manila areas: ₱300-400 ($5.35-7.10)
+- Rush delivery (same area): Additional ₱200 ($3.55)
+
+### Pickup Service
+- Free pickup at store location
+- Location: #11, 9th Ave, Cubao, QC, Metro Manila
+- Available during business hours: 8:00 AM - 5:00 PM (Mon-Sat)
+
+## SPECIAL PRICING RULES
+
+### Bulk Order Discounts
+- 50+ cupcakes: 10% discount
+- 100+ cupcakes: 15% discount
+- 200+ cupcakes: 20% discount
+- Corporate orders: 15% discount on orders ₱5,000+
+
+### Rush Order Charges
+- 24-48 hours notice: +50% of base price
+- Less than 24 hours: +100% of base price (subject to availability)
+
+### Seasonal Pricing
+- Valentine's Day (Feb 10-14): +25% on custom items
+- Christmas Season (Dec 15-25): +20% on all items
+- New Year (Dec 30-Jan 2): +15% on all items
+
+## PAYMENT TERMS
+- 50% deposit required for custom orders
+- Full payment for standard orders under ₱2,000
+- Cash, GCash, Bank Transfer accepted
+- Credit card payments: +3% processing fee
+
+## CANCELLATION POLICY
+- Standard orders: 48 hours notice for full refund
+- Custom orders: 72 hours notice, 50% refund after that
+- Wedding/Event orders: 1 week notice required
+
+## ORDERING PROCESS
+
+### Standard Orders (3-5 days lead time)
+1. Customer inquiry and product selection
+2. Price quotation provided
+3. Customer information and payment
+4. Order confirmation
+5. Production and delivery scheduling
+
+### Custom Orders (7 days lead time)
+1. Initial consultation (FREE)
+2. Design discussion and detailed quote
+3. 50% deposit payment
+4. Design approval and timeline confirmation
+5. Production scheduling
+6. Final payment and delivery
+
+## REQUIRED CUSTOMER INFORMATION
+- Full Name
+- Phone Number
+- Complete Delivery Address OR Pickup preference
+- Preferred Delivery Date and Time (within 9 AM - 6 PM)
+- Special dietary requirements or allergies
+- Payment method preference
+
+## LEAD TIMES SUMMARY
+- Standard Products: 3-5 days
+- Custom Designs: 7 days minimum
+- DIY Kits: 3-5 days
+- Wedding Cakes: 2-3 weeks recommended
+- Rush orders: Subject to availability and additional charges
+
+## SPECIAL FEATURES & SERVICES
+- Signature Red Velvet cupcakes
+- Custom design consultation (FREE)
+- Taste testing for wedding cakes (₱500, refundable with order)
+- Corporate catering services
+- Seasonal and themed products
+- Quality ingredients and fresh preparation
+- Allergen-free options available (additional cost)
+
+## BUSINESS PHILOSOPHY
+- Quality over quantity
+- Fresh, made-to-order products
+- Customer satisfaction priority
+- Creative and personalized service
+- Supporting life's celebrations
+- Transparent pricing with no hidden fees
+
+## IMPORTANT BUSINESS RULES
+- All prices in Philippine Peso (₱) with USD equivalent
+- Minimum quantities must be respected
+- Lead times are firm requirements
+- Custom designs require consultation and deposit
+- Same-day orders generally not possible
+- Quality standards are non-negotiable
+- Customer information required for all orders
+- Prices subject to change based on ingredient costs
+
+## COMPETITIVE ADVANTAGES
+- Competitive pricing in Metro Manila market
+- Flexible payment terms
+- Free consultation for custom work
+- Bulk order discounts
+- Reliable delivery service
+- Comprehensive product range
+- Personal customer service approach
+- Established local presence in Cubao area
+
+---
+Last Updated: June 12, 2025
+All prices are current as of this date and subject to change.
+This document serves as the complete business context for AI customer service systems.
+
+CURRENCY CONVERSION RATE: ₱56.25 = $1.00 USD (as of June 2025)
