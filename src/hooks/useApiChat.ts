@@ -177,10 +177,11 @@ export function useApiChat() {
     setTypingMessage('');
     
     try {
+      const requestBody = await apiService.buildRequestBody(message, chatHistory);
       const response = await fetch(apiService.getApiUrl(), {
         method: 'POST',
         headers: apiService.getApiHeaders(),
-        body: JSON.stringify(apiService.buildRequestBody(message, chatHistory))
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {
@@ -271,10 +272,11 @@ export function useApiChat() {
     const clearTyping = await simulateTyping(3000);
     
     try {
+      const requestBody = await apiService.buildRequestBody(message, chatHistory);
       const response = await fetch(apiService.getApiUrl(), {
         method: 'POST',
         headers: apiService.getApiHeaders(),
-        body: JSON.stringify(apiService.buildRequestBody(message, chatHistory))
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {

@@ -1,4 +1,4 @@
-import { Settings, Sun, Moon, Menu } from 'lucide-react';
+import { Settings, Sun, Moon, Menu, Trash2 } from 'lucide-react';
 import { useChat } from '@/contexts/ChatContext';
 
 interface HeaderProps {
@@ -12,6 +12,18 @@ export function Header({ onOpenSettings, onToggleSidebar }: HeaderProps) {
   const handleThemeToggle = () => {
     const newTheme = state.settings.theme === 'dark' ? 'light' : 'dark';
     dispatch({ type: 'UPDATE_SETTINGS', payload: { theme: newTheme } });
+  };
+
+  const handleClearChatHistory = () => {
+    if (window.confirm('Are you sure you want to clear all chat history? This action cannot be undone.')) {
+      dispatch({ type: 'UPDATE_CHAT', payload: { 
+        chatId: 'main-chat', 
+        chat: { 
+          messages: [], 
+          updatedAt: new Date().toISOString() 
+        } 
+      }});
+    }
   };
 
 
@@ -33,6 +45,14 @@ export function Header({ onOpenSettings, onToggleSidebar }: HeaderProps) {
       </div>
       
       <div className="flex items-center gap-3">
+        <button
+          onClick={handleClearChatHistory}
+          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
+          title="Clear chat history"
+        >
+          <Trash2 className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400" />
+        </button>
+        
         <button
           onClick={handleThemeToggle}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"

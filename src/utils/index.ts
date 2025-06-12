@@ -4,6 +4,12 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
+export function getSarahAvatarPath(): string {
+  // Check if we're in production (GitHub Pages deployment)
+  const isProduction = import.meta.env.PROD && window.location.hostname === 'dfegarido.github.io';
+  return isProduction ? '/chatbot/sarah-avatar.svg' : '/sarah-avatar.svg';
+}
+
 export function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }

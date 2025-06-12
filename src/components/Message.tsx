@@ -2,7 +2,7 @@ import React from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Message as MessageType } from '@/types';
 import { useChat } from '@/contexts/ChatContext';
-import { cn, formatTime, copyToClipboard } from '@/utils';
+import { cn, formatTime, copyToClipboard, getSarahAvatarPath } from '@/utils';
 import { MessageContent } from './MessageContent';
 
 interface MessageProps {
@@ -47,7 +47,7 @@ export function Message({ message }: MessageProps) {
                 <span className="text-xs font-semibold">👤</span>
               ) : (
                 <img 
-                  src="/sarah-avatar.svg" 
+                  src={getSarahAvatarPath()} 
                   alt="Sarah" 
                   className="w-full h-full object-cover"
                 />

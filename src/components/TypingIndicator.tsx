@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { cn } from '@/utils';
+import { cn, getSarahAvatarPath } from '@/utils';
 
 interface TypingIndicatorProps {
   message?: string;
@@ -132,7 +132,7 @@ export function TypingIndicator({ message, className }: TypingIndicatorProps) {
           <div className="flex-shrink-0">
             <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900 border-2 border-blue-200 dark:border-blue-700 animate-pulse-gentle overflow-hidden">
               <img 
-                src="/sarah-avatar.svg" 
+                src={getSarahAvatarPath()} 
                 alt="Sarah" 
                 className="w-full h-full object-cover"
               />

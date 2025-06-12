@@ -50,12 +50,12 @@ export class ChatApiService {
     }
   }
 
-  buildRequestBody(message: string, chatHistory: Message[]): any {
+  async buildRequestBody(message: string, chatHistory: Message[]): Promise<any> {
     if (this.settings.apiProvider === 'groq') {
       const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
       const modelToUse = groqModels.includes(this.settings.model) ? this.settings.model : 'llama-3.3-70b-versatile';
       
-      const messages = this.buildChatMessages(message, chatHistory);
+      const messages = await this.buildChatMessages(message, chatHistory);
       return {
         model: modelToUse,
         messages: messages,
@@ -67,7 +67,7 @@ export class ChatApiService {
       const openaiModels = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
       const modelToUse = openaiModels.includes(this.settings.model) ? this.settings.model : 'gpt-4';
       
-      const messages = this.buildChatMessages(message, chatHistory);
+      const messages = await this.buildChatMessages(message, chatHistory);
       return {
         model: modelToUse,
         messages: messages,
@@ -92,7 +92,36 @@ export class ChatApiService {
     }
   }
 
-  private buildChatMessages(message: string, chatHistory: Message[]): any[] {
+  private async loadBusinessFiles(): Promise<string> {
+    try {
+      // Determine the correct base path for business files
+      const isProduction = import.meta.env.PROD && window.location.hostname === 'dfegarido.github.io';
+      const basePath = isProduction ? '/chatbot' : '';
+      
+      // Load business files from the public docs folder
+      const businessInfoResponse = await fetch(`${basePath}/src/docs/CUPCAKE_LAB_BUSINESS_INFO.txt`);
+      const pricingResponse = await fetch(`${basePath}/src/docs/CUPCAKE_LAB_DETAILED_PRICING.txt`);
+      
+      let businessContent = '';
+      
+      if (businessInfoResponse.ok) {
+        const businessInfo = await businessInfoResponse.text();
+        businessContent += `\n\n[CUPCAKE LAB BUSINESS INFORMATION]\n${businessInfo}\n[END BUSINESS INFORMATION]\n`;
+      }
+      
+      if (pricingResponse.ok) {
+        const pricingInfo = await pricingResponse.text();
+        businessContent += `\n\n[CUPCAKE LAB DETAILED PRICING]\n${pricingInfo}\n[END PRICING INFORMATION]\n`;
+      }
+      
+      return businessContent;
+    } catch (error) {
+      console.warn('Could not load business files:', error);
+      return '';
+    }
+  }
+
+  private async buildChatMessages(message: string, chatHistory: Message[]): Promise<any[]> {
     const messages = [];
     
     // Check if there's uploaded business information
@@ -100,7 +129,13 @@ export class ChatApiService {
     
     let systemPrompt = this.settings.systemPrompt;
     
-    // Add uploaded business information if available
+    // First, try to load business files from docs folder
+    const businessFilesContent = await this.loadBusinessFiles();
+    if (businessFilesContent) {
+      systemPrompt += businessFilesContent;
+    }
+    
+    // Add uploaded business information if available (this takes precedence)
     if (businessInfo && businessInfo.content) {
       const businessContext = `
 
