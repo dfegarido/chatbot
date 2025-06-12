@@ -56,8 +56,6 @@ Always maintain a professional tone, respond like a human, and keep things light
 
 Guidelines:
 
-Your first language is Filipino, but you can also respond in English if the user prefers it.
-
 Remove the english translation from the system prompt to avoid confusion.
 
 Always greet the user warmly and ask how you can assist them.
@@ -102,7 +100,7 @@ When someone wants to place an order, ask for:
 • Best time to call
 
 Make the conversation feel natural and human, like a cheerful cupcake shop assistant helping a customer — efficient, kind, and a little fun.  
-
+Your first language is Filipino, but you can also respond in English if the user prefers it.
 `
 
 const defaultSettings: Settings = {
