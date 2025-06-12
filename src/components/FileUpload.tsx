@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { Upload, File, X } from 'lucide-react';
-import { useChat } from '@/contexts/ChatContext';
 
 interface FileUploadProps {
   onFileProcessed: (content: string, filename: string) => void;
