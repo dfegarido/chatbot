@@ -34,17 +34,32 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     };
   }, [state.settings, isOpen]);
 
-  // Handle ESC key press
+  // Check if current configuration is valid
+  const isConfigurationValid = () => {
+    const { apiProvider, groqApiKey, openaiApiKey, ollamaUrl } = localSettings;
+    
+    if (apiProvider === 'groq') {
+      return groqApiKey && groqApiKey.trim() !== '';
+    } else if (apiProvider === 'openai') {
+      return openaiApiKey && openaiApiKey.trim() !== '';
+    } else if (apiProvider === 'ollama') {
+      return ollamaUrl && ollamaUrl.trim() !== '';
+    }
+    
+    return false;
+  };
+
+  // Handle ESC key press - only allow closing if configuration is valid
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
+      if (event.key === 'Escape' && isOpen && isConfigurationValid()) {
         onClose();
       }
     };
 
     document.addEventListener('keydown', handleEscKey);
     return () => document.removeEventListener('keydown', handleEscKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, localSettings]);
 
   const fetchModels = async () => {
     try {
@@ -107,7 +122,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && isConfigurationValid()) {
+      onClose();
+    }
+  };
+
+  const handleCloseClick = () => {
+    if (isConfigurationValid()) {
       onClose();
     }
   };
@@ -133,12 +154,34 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Settings</h2>
           <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+            onClick={handleCloseClick}
+            className={cn(
+              "p-2 rounded-lg transition-colors",
+              isConfigurationValid()
+                ? "hover:bg-gray-100 dark:hover:bg-gray-700"
+                : "opacity-50 cursor-not-allowed"
+            )}
+            disabled={!isConfigurationValid()}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Warning message when configuration is invalid */}
+        {!isConfigurationValid() && (
+          <div className="mx-6 mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-amber-700 dark:text-amber-300">
+                <strong>API Configuration Required</strong>
+                <p className="mt-1">
+                  You must configure an API key or server URL before you can use the chat. 
+                  Please complete the settings below and test your connection.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-6 space-y-6">
@@ -329,8 +372,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         {/* Footer */}
         <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            onClick={handleCloseClick}
+            className={cn(
+              "px-4 py-2 transition-colors",
+              isConfigurationValid()
+                ? "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                : "text-gray-400 dark:text-gray-600 cursor-not-allowed"
+            )}
+            disabled={!isConfigurationValid()}
           >
             Cancel
           </button>

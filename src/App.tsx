@@ -7,9 +7,35 @@ import { ChatInput } from '@/components/ChatInput';
 import { SettingsModal } from '@/components/SettingsModal';
 
 function AppContent() {
-  const { createNewChat } = useChat();
+  const { createNewChat, state } = useChat();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Check if API configuration is missing and auto-open settings
+  useEffect(() => {
+    const checkApiConfiguration = () => {
+      const { apiProvider, groqApiKey, openaiApiKey, ollamaUrl } = state.settings;
+      
+      let hasValidConfig = false;
+      
+      if (apiProvider === 'groq' && groqApiKey && groqApiKey.trim() !== '') {
+        hasValidConfig = true;
+      } else if (apiProvider === 'openai' && openaiApiKey && openaiApiKey.trim() !== '') {
+        hasValidConfig = true;
+      } else if (apiProvider === 'ollama' && ollamaUrl && ollamaUrl.trim() !== '') {
+        hasValidConfig = true;
+      }
+      
+      if (!hasValidConfig) {
+        setSettingsOpen(true);
+      }
+    };
+
+    // Only check after settings are loaded (avoid checking default empty values)
+    if (state.settings) {
+      checkApiConfiguration();
+    }
+  }, [state.settings]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -45,7 +71,7 @@ function AppContent() {
         
         <ChatArea />
         
-        <ChatInput />
+        <ChatInput onOpenSettings={() => setSettingsOpen(true)} />
       </div>
       
       <SettingsModal 

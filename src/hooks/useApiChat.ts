@@ -3,7 +3,7 @@ import { ChatApiService } from '@/services/api';
 import { useChat } from '@/contexts/ChatContext';
 import { Message } from '@/types';
 
-export function useApiChat() {
+export function useApiChat(onOpenSettings?: () => void) {
   const { state, dispatch } = useChat();
   const [isTyping, setIsTyping] = useState(false);
   const [typingMessage, setTypingMessage] = useState('');
@@ -135,6 +135,12 @@ export function useApiChat() {
     if (validationError) {
       setIsTyping(false);
       setTypingMessage('');
+      
+      // Trigger settings modal if callback provided
+      if (onOpenSettings) {
+        onOpenSettings();
+      }
+      
       throw new Error(validationError);
     }
 

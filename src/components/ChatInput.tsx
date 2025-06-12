@@ -5,9 +5,13 @@ import { useApiChat } from '@/hooks/useApiChat';
 import { cn } from '@/utils';
 import { EmojiPicker } from './EmojiPicker';
 
-export function ChatInput() {
+interface ChatInputProps {
+  onOpenSettings?: () => void;
+}
+
+export function ChatInput({ onOpenSettings }: ChatInputProps) {
   const { state, createNewChat } = useChat();
-  const { sendMessage } = useApiChat();
+  const { sendMessage } = useApiChat(onOpenSettings);
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
