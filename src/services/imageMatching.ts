@@ -106,6 +106,21 @@ export class ImageMatchingService {
   }
 
   /**
+   * Check if a query is asking about specific products, pricing, or detailed product information
+   */
+  isProductSpecificQuery(query: string): boolean {
+    const lowerQuery = query.toLowerCase();
+    const productKeywords = [
+      'cupcake', 'cake', 'price', 'pricing', 'cost', 'how much', 'flavor', 'flavors',
+      'order', 'ordering', 'buy', 'purchase', 'delivery', 'pickup', 'custom', 'design',
+      'size', 'sizes', 'menu', 'available', 'options', 'diy', 'kit', 'red velvet',
+      'chocolate', 'vanilla', 'minimum', 'lead time', 'ingredient', 'allergen'
+    ];
+    
+    return productKeywords.some(keyword => lowerQuery.includes(keyword));
+  }
+
+  /**
    * Generate a response message with images
    */
   generateImageResponse(query: string): { content: string; images: string[] } | null {
@@ -116,6 +131,13 @@ export class ImageMatchingService {
     }
 
     const isExplicitImageRequest = this.isImageRequest(query);
+    const isProductQuery = this.isProductSpecificQuery(query);
+    
+    // Only return images if explicitly requested or for specific product queries
+    if (!isExplicitImageRequest && !isProductQuery) {
+      return null;
+    }
+    
     const imagePaths = relevantImages.map(img => img.path);
     
     let content = '';
@@ -367,6 +389,11 @@ export class ImageMatchingService {
    * Answer specific questions about products using ImageDefinition details
    */
   answerProductQuestion(query: string): { content: string; images: string[] } | null {
+    // Only answer if the query is actually about products
+    if (!this.isProductSpecificQuery(query)) {
+      return null;
+    }
+    
     const relevantImages = this.findRelevantImages(query, 5); // Get more results for comprehensive answers
     
     if (relevantImages.length === 0) {

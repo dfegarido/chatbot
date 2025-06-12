@@ -22,7 +22,7 @@ export function Header({ onToggleSidebar, onOpenSettings }: HeaderProps) {
 
   const getModelOptions = () => {
     if (state.settings.apiProvider === 'groq') {
-      return ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+      return ['deepseek-r1-distill-llama-70b', 'llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
     } else {
       return ['llama3.2:latest', 'deepseek-coder:1.3b', 'deepseek-r1:8b', 'deepseek-coder-v2:latest'];
     }

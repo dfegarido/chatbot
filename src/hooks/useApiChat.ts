@@ -34,15 +34,15 @@ export function useApiChat() {
   const sendMessage = useCallback(async (content: string) => {
     if (!state.currentChatId || state.isStreaming) return;
 
-    // Check if the query matches any images or detailed product questions
     const imageService = new ImageMatchingService();
-    
-    // First try the enhanced detailed question answering
-    let imageResponse = imageService.answerProductQuestion(content);
-    
-    // If no detailed response, fall back to general image matching
-    if (!imageResponse) {
-      imageResponse = imageService.generateImageResponse(content);
+    let imageResponse = null;
+    const isImageRequest = imageService.isImageRequest(content);
+    const isProductSpecificQuery = imageService.isProductSpecificQuery(content);
+    if (isImageRequest || isProductSpecificQuery) {
+      imageResponse = imageService.answerProductQuestion(content);
+      if (!imageResponse) {
+        imageResponse = imageService.generateImageResponse(content);
+      }
     }
 
     // Create user message
@@ -56,8 +56,8 @@ export function useApiChat() {
     // Add user message
     dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId, message: userMessage } });
 
-    // If we have relevant images, include them in the API request for AI enhancement
-    if (imageResponse) {
+    // Only include product context if we have relevant images and the query is product-related
+    if (imageResponse && (isImageRequest || isProductSpecificQuery)) {
       // Get detailed image information for AI processing
       const relevantImages = imageService.findRelevantImages(content, 5);
       const imageDetails = relevantImages.map(img => ({
@@ -68,27 +68,12 @@ export function useApiChat() {
         filename: img.filename
       }));
 
-      // Enhance the user message with image context for AI
-      const enhancedContent = `${content}
-
-[PRODUCT_CONTEXT_DATA:
-${imageDetails.map(img => `
-PRODUCT: ${img.description}
-CATEGORY: ${img.category}
-KEYWORDS: ${img.keywords.join(', ')}
-AVAILABLE_SIZES_AND_PRICING: ${JSON.stringify(img.prices, null, 2)}
-IMAGE_FILE: ${img.filename}
----`).join('')}
-END_PRODUCT_CONTEXT_DATA]
-
-User Query: ${content}
-
-Please provide a comprehensive response using the product information above. Include specific pricing details, product features, and helpful recommendations based on the available options. Be conversational and make the response engaging while incorporating all relevant product details from the context data.`;
-
-      // Continue with API call using enhanced content, and include images in response
-      content = enhancedContent;
-      // Store image response for later use
+      // Store both image response and product details for the API to use
       (window as any).__tempImageResponse = imageResponse;
+      (window as any).__tempProductDetails = imageDetails;
+    } else {
+      (window as any).__tempImageResponse = undefined;
+      (window as any).__tempProductDetails = undefined;
     }
 
     const apiService = new ChatApiService(state.settings);
@@ -136,6 +121,7 @@ Please provide a comprehensive response using the product information above. Inc
   ) => {
     setIsTyping(true);
     setTypingMessage('Processing your request...');
+    const imageService = new ImageMatchingService();
     
     try {
       const response = await fetch(apiService.getApiUrl(), {
@@ -214,18 +200,22 @@ Please provide a comprehensive response using the product information above. Inc
       
       // Check if we have stored image response for this query
       const storedImageResponse = (window as any).__tempImageResponse;
-      
+      let imagesToSend = undefined;
+      if (imageService.isImageRequest(message) || imageService.isProductSpecificQuery(message)) {
+        imagesToSend = storedImageResponse?.images || undefined;
+      }
       // Create assistant message
       const assistantMessage: Message = {
         id: `msg_${Date.now()}_assistant`,
         role: 'assistant',
         content: fullResponse,
         timestamp: new Date().toISOString(),
-        images: storedImageResponse?.images || undefined
+        images: imagesToSend
       };
       
-      // Clear stored image response
+      // Clear stored data
       (window as any).__tempImageResponse = undefined;
+      (window as any).__tempProductDetails = undefined;
       
       dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId!, message: assistantMessage } });
     } finally {
@@ -240,6 +230,7 @@ Please provide a comprehensive response using the product information above. Inc
     chatHistory: Message[]
   ) => {
     setIsTyping(true);
+    const imageService = new ImageMatchingService();
     
     // Start typing simulation
     const clearTyping = await simulateTyping(3000);
@@ -280,18 +271,22 @@ Please provide a comprehensive response using the product information above. Inc
       
       // Check if we have stored image response for this query
       const storedImageResponse = (window as any).__tempImageResponse;
-      
+      let imagesToSend = undefined;
+      if (imageService.isImageRequest(message) || imageService.isProductSpecificQuery(message)) {
+        imagesToSend = storedImageResponse?.images || undefined;
+      }
       const assistantMessage: Message = {
         id: `msg_${Date.now()}_assistant`,
         role: 'assistant',
         content: assistantResponse,
         timestamp: new Date().toISOString(),
         thinking: thinkingContent || undefined,
-        images: storedImageResponse?.images || undefined
+        images: imagesToSend
       };
       
-      // Clear stored image response
+      // Clear stored data
       (window as any).__tempImageResponse = undefined;
+      (window as any).__tempProductDetails = undefined;
       
       dispatch({ type: 'ADD_MESSAGE', payload: { chatId: state.currentChatId!, message: assistantMessage } });
     } finally {

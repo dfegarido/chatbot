@@ -85,7 +85,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const handleApiProviderChange = (provider: 'ollama' | 'groq') => {
     const newSettings = { ...localSettings, apiProvider: provider };
-    
     // Switch to compatible model
     if (provider === 'groq') {
       const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
@@ -98,7 +97,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         newSettings.model = 'llama3.2:latest';
       }
     }
-    
     setLocalSettings(newSettings);
   };
 
@@ -274,20 +272,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               value={localSettings.maxTokens}
               onChange={(e) => setLocalSettings({ ...localSettings, maxTokens: parseInt(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
-
-          {/* System Prompt */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              System Prompt
-            </label>
-            <textarea
-              value={localSettings.systemPrompt}
-              onChange={(e) => setLocalSettings({ ...localSettings, systemPrompt: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="You are a helpful AI assistant."
             />
           </div>
 

@@ -71,10 +71,32 @@ export class ChatApiService {
   private buildGroqMessages(message: string, chatHistory: Message[]): any[] {
     const messages = [];
     
-    if (this.settings.systemPrompt) {
+    // Check if there are product details to include
+    const productDetails = (window as any).__tempProductDetails;
+    let systemPrompt = this.settings.systemPrompt;
+    
+    if (productDetails && productDetails.length > 0) {
+      const productContext = `
+
+[AVAILABLE_PRODUCT_INFORMATION - Use this data to answer product-related questions:]
+${productDetails.map((img: any) => `
+- PRODUCT: ${img.description}
+- CATEGORY: ${img.category}
+- KEYWORDS: ${img.keywords.join(', ')}
+- PRICING: ${JSON.stringify(img.prices, null, 2)}
+- IMAGE: ${img.filename}
+`).join('')}
+[END_PRODUCT_INFORMATION]
+
+When users ask about products, pricing, or related information, use the data above to provide accurate, specific details. Keep responses concise and focused on what the user actually asked.`;
+      
+      systemPrompt += productContext;
+    }
+    
+    if (systemPrompt) {
       messages.push({
         role: 'system',
-        content: this.settings.systemPrompt
+        content: systemPrompt
       });
     }
     
@@ -95,7 +117,28 @@ export class ChatApiService {
   }
 
   private buildPrompt(message: string, chatHistory: Message[]): string {
-    const systemPrompt = this.settings.systemPrompt || "You are a helpful AI assistant.";
+    let systemPrompt = this.settings.systemPrompt || "You are a helpful AI assistant.";
+    
+    // Check if there are product details to include
+    const productDetails = (window as any).__tempProductDetails;
+    
+    if (productDetails && productDetails.length > 0) {
+      const productContext = `
+
+[AVAILABLE_PRODUCT_INFORMATION - Use this data to answer product-related questions:]
+${productDetails.map((img: any) => `
+- PRODUCT: ${img.description}
+- CATEGORY: ${img.category}
+- KEYWORDS: ${img.keywords.join(', ')}
+- PRICING: ${JSON.stringify(img.prices, null, 2)}
+- IMAGE: ${img.filename}
+`).join('')}
+[END_PRODUCT_INFORMATION]
+
+When users ask about products, pricing, or related information, use the data above to provide accurate, specific details. Keep responses concise and focused on what the user actually asked.`;
+      
+      systemPrompt += productContext;
+    }
     
     let prompt = systemPrompt + "\n\n";
     
